@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Astro Client Manager</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+    <script src="https://unpkg.com/dexie/dist/dexie.js"></script>
+</head>
+<body>
+
+    <header>
+        <h1>🌟 Pratnya Astro</h1>
+    </header>
+
+    <div class="container">
+        <div class="card">
+            <h3>Add Client</h3>
+            <form id="clientForm">
+                <input type="hidden" id="clientId"> <input type="text" id="name" placeholder="Client Name" required>
+                <input type="text" id="star" placeholder="Star (Nakshatram)">
+                <input type="text" id="phone" placeholder="Phone Number">
+                <textarea id="notes" placeholder="Case History"></textarea>
+                <button type="submit" id="saveBtn">Save Client</button>
+            </form>
+        </div>
+
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="🔍 Search Client Name...">
+        </div>
+
+        <div id="clientList" class="client-list">
+            </div>
+    </div>
+
+    <script src="app.js"></script>
+    
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js')
+                .then(() => console.log("Service Worker Registered!"))
+                .catch(err => console.log("SW Failed", err));
+        }
+    </script>
+</body>
+</html>

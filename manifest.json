@@ -1,0 +1,20 @@
+{
+    "name": "Pratnya Astro Manager",
+    "short_name": "AstroManager",
+    "start_url": "./index.html",
+    "display": "standalone",
+    "background_color": "#ffffff",
+    "theme_color": "#2E7D32",
+    "icons": [
+        {
+            "src": "https://cdn-icons-png.flaticon.com/512/2646/2646097.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "https://cdn-icons-png.flaticon.com/512/2646/2646097.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        }
+    ]
+}
