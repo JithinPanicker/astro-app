@@ -25,12 +25,58 @@ button { border: none; border-radius: 6px; cursor: pointer; font-weight: 600; tr
 .btn-view { background: #e3f2fd; color: #1976D2; padding: 6px 12px; border-radius: 4px; font-size: 13px; }
 .btn-del { background: #ffebee; color: #c62828; padding: 6px 12px; border-radius: 4px; font-size: 13px; }
 
-/* Modal Form Styles */
-.modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: flex-start; overflow-y: auto; z-index: 1000; }
-.hidden { display: none; }
-.modal-content { background: white; width: 100%; max-width: 600px; padding: 20px; border-radius: 0 0 10px 10px; min-height: 100vh; box-sizing: border-box; }
-.modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+/* Modal Form Styles (Updated for Small Popup) */
+.modal { 
+    position: fixed; 
+    top: 0; 
+    left: 0; 
+    width: 100%; 
+    height: 100%; 
+    background: rgba(0,0,0,0.6); /* Darker background */
+    display: flex; 
+    justify-content: center; 
+    align-items: center; /* Center vertically */
+    z-index: 1000; 
+    padding: 20px; /* Space around edges */
+    box-sizing: border-box;
+}
 
+.hidden { display: none; }
+
+.modal-content { 
+    background: white; 
+    width: 100%; 
+    max-width: 380px; /* Much smaller width */
+    padding: 20px; 
+    border-radius: 15px; /* Nice rounded corners */
+    max-height: 85vh; /* Don't touch top/bottom of screen */
+    overflow-y: auto; /* Scroll inside if too tall */
+    box-shadow: 0 10px 25px rgba(0,0,0,0.3); /* 3D Shadow effect */
+    position: relative;
+    animation: popupFade 0.3s ease-out;
+}
+
+/* Smooth Animation */
+@keyframes popupFade {
+    from { transform: scale(0.8); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+
+.modal-header { 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    margin-bottom: 15px; 
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
+}
+
+/* Make inputs look compact */
+input, textarea { 
+    padding: 8px; 
+    font-size: 14px; 
+    margin-bottom: 8px; 
+}
 /* Form Inputs */
 .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 input, textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; margin-bottom: 10px; font-family: inherit; }
