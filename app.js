@@ -240,3 +240,26 @@ function calculateAge() {
 
     document.getElementById('age').value = age;
 }
+// DELETE CURRENT CLIENT
+async function deleteCurrentClient() {
+    const id = document.getElementById('clientId').value;
+
+    // 1. Check if a client is actually selected
+    if (!id) {
+        alert("No client selected to delete.");
+        return;
+    }
+
+    // 2. Ask for confirmation (Safety Check)
+    const confirmDelete = confirm("Are you sure you want to PERMANENTLY delete this client? This cannot be undone.");
+    
+    if (confirmDelete) {
+        // 3. Delete from Database
+        await db.clients.delete(parseInt(id));
+        
+        // 4. Close Form and Refresh List
+        alert("Client Deleted Successfully.");
+        closeForm();
+        updateList();
+    }
+}

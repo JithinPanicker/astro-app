@@ -57,7 +57,7 @@
 </div>
 
                     <div id="historySection">
-                        <h4>📜 Previous Consultations</h4>
+                        <h4>Previous Consultations</h4>
                         <div id="historyList" class="history-container">
                             </div>
                     </div>
@@ -71,10 +71,15 @@
                         <textarea id="currentSolution" rows="3" placeholder="Enter solution here..."></textarea>
                     </div>
 
-                    <div class="form-actions">
-                        <button type="submit" class="btn-save">💾 Save Record</button>
-                        <button type="button" onclick="generatePDF()" class="btn-pdf">📥 Download PDF</button>
-                    </div>
+                    <div class="form-actions" style="display: flex; gap: 10px;">
+    <button type="submit" class="btn-save" style="flex: 2;">Save Record</button>
+    
+    <button type="button" onclick="generatePDF()" class="btn-pdf" style="flex: 1;">PDF</button>
+
+    <button type="button" onclick="deleteCurrentClient()" style="background-color: #c62828; color: white; border: none; padding: 12px; border-radius: 6px; flex: 1;">
+        Delete
+    </button>
+</div>
                 </form>
             </div>
         </div>
