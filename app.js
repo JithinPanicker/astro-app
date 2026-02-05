@@ -1,3 +1,59 @@
+// --- LICENSE SYSTEM ---
+
+// 1. Check License on Startup
+checkLicense();
+
+function checkLicense() {
+    const expiry = localStorage.getItem('pratnya_license_expiry');
+    const lockScreen = document.getElementById('licenseScreen');
+    
+    // If no date found OR date has passed
+    if (!expiry || new Date() > new Date(expiry)) {
+        lockScreen.style.display = 'flex'; // Show Lock
+        document.body.style.overflow = 'hidden'; // Stop scrolling
+    } else {
+        lockScreen.style.display = 'none'; // Unlock App
+        document.body.style.overflow = 'auto';
+    }
+}
+
+// 2. Activate License (When user enters key)
+window.activateLicense = function() {
+    const input = document.getElementById('licenseKeyInput').value.trim();
+    const errorMsg = document.getElementById('licenseError');
+
+    try {
+        // Decode the key (Base64)
+        const decoded = atob(input); // format: "PRATNYA-SECRET|2027-02-05"
+        const parts = decoded.split('|');
+
+        if (parts[0] !== "PRATNYA-SECRET") {
+            throw new Error("Invalid Key");
+        }
+
+        const expiryDate = new Date(parts[1]);
+        if (isNaN(expiryDate.getTime())) {
+            throw new Error("Invalid Date");
+        }
+
+        // Save to phone
+        localStorage.setItem('pratnya_license_expiry', parts[1]);
+        
+        // Unlock
+        Swal.fire({
+            title: 'Activated!',
+            text: 'Subscription active until ' + parts[1],
+            icon: 'success'
+        }).then(() => {
+            location.reload();
+        });
+
+    } catch (e) {
+        errorMsg.style.display = 'block';
+        errorMsg.innerText = "Invalid Key. Please contact Admin.";
+    }
+};
+
 // 1. Initialize Database
 const db = new Dexie('AstroAppDB');
 db.version(4).stores({
