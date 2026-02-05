@@ -33,6 +33,7 @@ function closeForm() {
 form.onsubmit = async (event) => {
     event.preventDefault();
     
+    // Get Data
     const id = document.getElementById('clientId').value;
     const basicData = {
         name: document.getElementById('name').value,
@@ -59,22 +60,22 @@ form.onsubmit = async (event) => {
         };
     }
 
+    // Save to DB
     if (id) {
-        // Update
         const client = await db.clients.get(parseInt(id));
         let history = client.consultations || [];
         if (consultationEntry) history.unshift(consultationEntry);
         await db.clients.update(parseInt(id), { ...basicData, consultations: history });
     } else {
-        // Create
         const history = consultationEntry ? [consultationEntry] : [];
         await db.clients.add({ ...basicData, consultations: history });
     }
 
+    // UI Cleanup
     closeForm();
-    await updateList(); // Wait for list to update
+    await updateList();
 
-    // Small "Saved" Popup
+    // Small Success Popup
     Swal.fire({
         title: 'Saved!',
         icon: 'success',
@@ -130,7 +131,6 @@ async function updateList() {
     if (query) {
         clients = clients.filter(c => c.name.toLowerCase().includes(query));
     }
-    
     clients.reverse();
 
     const listDiv = document.getElementById('clientList');
@@ -147,39 +147,35 @@ async function updateList() {
     `).join('');
 }
 
-// 5. GENERATE PDF (FIXED & SAFER)
+// 5. GENERATE PDF (With Small "Generating" Popup)
 window.generatePDF = async () => {
-    // Safety Check: Are libraries loaded?
-    if (!window.jspdf || !window.html2canvas) {
-        Swal.fire({
-            title: 'Error',
-            text: 'PDF tools not loaded. Please connect to internet and refresh app once.',
-            icon: 'error',
-            width: '280px'
-        });
-        return;
-    }
-
-    // Show "Generating..." Popup
+    // 1. Show "Generating..." Spinner immediately
     Swal.fire({
         title: 'Generating PDF...',
         icon: 'info',
         width: '250px',
         padding: '15px',
         showConfirmButton: false,
-        didOpen: () => Swal.showLoading()
+        didOpen: () => {
+            Swal.showLoading();
+        }
     });
 
+    // Short wait to ensure spinner renders
     await new Promise(resolve => setTimeout(resolve, 500));
 
     try {
+        if (!window.jspdf || !window.html2canvas) throw new Error("Libraries not loaded");
+
         const { jsPDF } = window.jspdf;
-        const name = document.getElementById('name').value || "Client";
+        
+        // Gather Data
+        const name = document.getElementById('name').value;
         const star = document.getElementById('star').value;
         const dob = document.getElementById('dob').value;
         const time = document.getElementById('birthTime').value;
 
-        // Time Formatting
+        // Format Time
         let displayTime = time;
         if(time) {
             const [h, m] = time.split(':');
@@ -189,6 +185,7 @@ window.generatePDF = async () => {
             displayTime = `${hour12}:${m} ${ampm}`;
         }
 
+        // Build HTML
         let htmlContent = `
             <table style="width: 100%; margin-bottom: 20px; font-size: 14px;">
                 <tr><td><strong>Name:</strong> ${name}</td><td><strong>Star:</strong> ${star}</td></tr>
@@ -223,6 +220,7 @@ window.generatePDF = async () => {
 
         document.getElementById('pdfContent').innerHTML = htmlContent;
 
+        // Generate PDF
         const element = document.getElementById('pdfTemplate');
         const canvas = await html2canvas(element, { scale: 2 });
         const imgData = canvas.toDataURL('image/png');
@@ -233,6 +231,7 @@ window.generatePDF = async () => {
         pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
         pdf.save(`${name}_Report.pdf`);
 
+        // Change to Success Popup
         Swal.fire({
             title: 'Downloaded!',
             icon: 'success',
@@ -243,11 +242,11 @@ window.generatePDF = async () => {
 
     } catch (error) {
         console.error(error);
-        Swal.fire({ title: 'Error', text: 'PDF failed. Try again.', icon: 'error', width: '250px' });
+        Swal.fire({ title: 'Error', text: 'PDF Failed', icon: 'error', width: '250px' });
     }
 };
 
-// 6. DELETE CLIENT (FIXED)
+// 6. DELETE CLIENT (Instant Fix)
 async function deleteCurrentClient() {
     const id = document.getElementById('clientId').value;
 
@@ -269,28 +268,24 @@ async function deleteCurrentClient() {
         cancelButtonText: 'No'
     }).then(async (result) => {
         if (result.isConfirmed) {
-            try {
-                // 1. Delete from DB
-                await db.clients.delete(parseInt(id));
-                
-                // 2. Close Form First
-                closeForm(); 
-                
-                // 3. Update List (Await ensures it finishes)
-                await updateList();
+            
+            // 1. DELETE FROM DB FIRST
+            await db.clients.delete(parseInt(id));
+            
+            // 2. CLOSE FORM IMMEDIATELY (So it disappears)
+            closeForm();
 
-                // 4. Show Success
-                Swal.fire({
-                    title: 'Deleted!',
-                    icon: 'success',
-                    width: '250px',
-                    timer: 1500,
-                    showConfirmButton: false
-                });
-            } catch (err) {
-                console.error(err);
-                Swal.fire('Error', 'Could not delete.', 'error');
-            }
+            // 3. REFRESH LIST IN BACKGROUND
+            await updateList();
+
+            // 4. SHOW SUCCESS POPUP (On Home Screen)
+            Swal.fire({
+                title: 'Deleted!',
+                icon: 'success',
+                width: '250px',
+                timer: 1500,
+                showConfirmButton: false
+            });
         }
     });
 }
