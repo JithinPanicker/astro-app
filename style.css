@@ -98,3 +98,14 @@ input, textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-rad
 .swal2-title { font-size: 20px !important; }
 .swal2-content { font-size: 14px !important; }
 .swal2-popup { font-size: 12px !important; }
+
+/* --- FIX POPUP VISIBILITY --- */
+/* Your form is 2000, so we make popups 3000 */
+.swal2-container {
+    z-index: 3000 !important;
+}
+
+/* Also ensure the loading spinner is visible */
+.swal2-loader {
+    border-color: #2E7D32 transparent #2E7D32 transparent !important;
+}
