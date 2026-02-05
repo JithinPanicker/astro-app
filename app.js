@@ -1,6 +1,5 @@
-// 1. Initialize Database (Updated Version 2)
+// 1. Initialize Database
 const db = new Dexie('AstroAppDB');
-// Change version to 3 and add 'dob'
 db.version(4).stores({
     clients: '++id, name, star, phone, location, age, dob, birthTime, profession' 
 });
@@ -16,10 +15,10 @@ updateList();
 
 // --- CORE FUNCTIONS ---
 
-// 1. Show Form (New or Edit)
+// 1. Show/Close Form
 function showForm() {
     modal.classList.remove('hidden');
-    document.body.style.overflow = 'hidden'; // Stop background scrolling
+    document.body.style.overflow = 'hidden'; 
 }
 
 function closeForm() {
@@ -30,16 +29,15 @@ function closeForm() {
     document.getElementById('historyList').innerHTML = "<p style='color:#888; text-align:center;'>No previous history</p>";
 }
 
-// 2. SAVE CLIENT (Handles Logic)
+// 2. SAVE CLIENT
 form.onsubmit = async (event) => {
     event.preventDefault();
     
-    // Get Basic Data
     const id = document.getElementById('clientId').value;
     const basicData = {
         name: document.getElementById('name').value,
         star: document.getElementById('star').value,
-        dob: document.getElementById('dob').value, // <--- ADD THIS LINE
+        dob: document.getElementById('dob').value,
         age: document.getElementById('age').value,
         birthTime: document.getElementById('birthTime').value,
         location: document.getElementById('place').value,
@@ -48,7 +46,6 @@ form.onsubmit = async (event) => {
         updated: new Date()
     };
 
-    // Get New Consultation Data
     const problem = document.getElementById('currentProblem').value.trim();
     const solution = document.getElementById('currentSolution').value.trim();
     
@@ -63,54 +60,46 @@ form.onsubmit = async (event) => {
     }
 
     if (id) {
-        // UPDATE EXISTING CLIENT
+        // Update
         const client = await db.clients.get(parseInt(id));
         let history = client.consultations || [];
-        
-        // Add new consultation to history if text exists
-        if (consultationEntry) {
-            history.unshift(consultationEntry); // Add to top
-        }
-
+        if (consultationEntry) history.unshift(consultationEntry);
         await db.clients.update(parseInt(id), { ...basicData, consultations: history });
-
     } else {
-        // CREATE NEW CLIENT
+        // Create
         const history = consultationEntry ? [consultationEntry] : [];
         await db.clients.add({ ...basicData, consultations: history });
     }
 
     closeForm();
-    updateList();
-    // Success Popup
-    // COMPACT Success Popup
+    await updateList(); // Wait for list to update
+
+    // Small "Saved" Popup
     Swal.fire({
         title: 'Saved!',
         icon: 'success',
-        timer: 1500,               // Auto close after 1.5 seconds
-        showConfirmButton: false,  // No button needed (faster)
-        width: '250px',            // <--- MAKES IT SMALL
+        timer: 1500,
+        showConfirmButton: false,
+        width: '250px',
         padding: '15px'
     });
 };
 
-// 3. LOAD CLIENT (View/Edit)
+// 3. LOAD CLIENT
 window.loadClient = async (id) => {
     const client = await db.clients.get(id);
     if(!client) return;
 
-    // Fill Basic Inputs
     document.getElementById('clientId').value = client.id;
     document.getElementById('name').value = client.name;
     document.getElementById('star').value = client.star || "";
     document.getElementById('dob').value = client.dob || "";
     document.getElementById('age').value = client.age || "";
-    document.getElementById('birthTime').value = client.birthTime || ""; // <--- ADD THIS
+    document.getElementById('birthTime').value = client.birthTime || "";
     document.getElementById('place').value = client.location || "";
     document.getElementById('phone').value = client.phone || "";
     document.getElementById('profession').value = client.profession || "";
 
-    // Render History (Previous Consultations)
     const listDiv = document.getElementById('historyList');
     listDiv.innerHTML = "";
 
@@ -133,7 +122,7 @@ window.loadClient = async (id) => {
     showForm();
 };
 
-// 4. DISPLAY LIST (Main Screen)
+// 4. DISPLAY LIST
 async function updateList() {
     const query = searchInput.value.toLowerCase();
     let clients = await db.clients.toArray();
@@ -142,7 +131,7 @@ async function updateList() {
         clients = clients.filter(c => c.name.toLowerCase().includes(query));
     }
     
-    clients.reverse(); // Newest first
+    clients.reverse();
 
     const listDiv = document.getElementById('clientList');
     listDiv.innerHTML = clients.map(client => `
@@ -158,33 +147,34 @@ async function updateList() {
     `).join('');
 }
 
-// 5. GENERATE PDF
-// GENERATE PDF (Malayalam Supported)
-/* app.js - REPLACE THE PDF FUNCTION */
-
-// GENERATE PDF (With Small Popup)
+// 5. GENERATE PDF (FIXED & SAFER)
 window.generatePDF = async () => {
-    
-    // 1. Show "Generating..." Popup
+    // Safety Check: Are libraries loaded?
+    if (!window.jspdf || !window.html2canvas) {
+        Swal.fire({
+            title: 'Error',
+            text: 'PDF tools not loaded. Please connect to internet and refresh app once.',
+            icon: 'error',
+            width: '280px'
+        });
+        return;
+    }
+
+    // Show "Generating..." Popup
     Swal.fire({
         title: 'Generating PDF...',
         icon: 'info',
-        width: '250px',            // <--- Small Size
+        width: '250px',
         padding: '15px',
-        showConfirmButton: false,  // No button
-        didOpen: () => {
-            Swal.showLoading();    // Show loading spinner
-        }
+        showConfirmButton: false,
+        didOpen: () => Swal.showLoading()
     });
 
-    // Small delay to let the popup appear before heavy work starts
     await new Promise(resolve => setTimeout(resolve, 500));
 
     try {
         const { jsPDF } = window.jspdf;
-        
-        // Get Data
-        const name = document.getElementById('name').value;
+        const name = document.getElementById('name').value || "Client";
         const star = document.getElementById('star').value;
         const dob = document.getElementById('dob').value;
         const time = document.getElementById('birthTime').value;
@@ -199,7 +189,6 @@ window.generatePDF = async () => {
             displayTime = `${hour12}:${m} ${ampm}`;
         }
 
-        // Build HTML
         let htmlContent = `
             <table style="width: 100%; margin-bottom: 20px; font-size: 14px;">
                 <tr><td><strong>Name:</strong> ${name}</td><td><strong>Star:</strong> ${star}</td></tr>
@@ -234,7 +223,6 @@ window.generatePDF = async () => {
 
         document.getElementById('pdfContent').innerHTML = htmlContent;
 
-        // Capture & Save
         const element = document.getElementById('pdfTemplate');
         const canvas = await html2canvas(element, { scale: 2 });
         const imgData = canvas.toDataURL('image/png');
@@ -245,7 +233,6 @@ window.generatePDF = async () => {
         pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
         pdf.save(`${name}_Report.pdf`);
 
-        // Change Popup to "Success"
         Swal.fire({
             title: 'Downloaded!',
             icon: 'success',
@@ -255,71 +242,71 @@ window.generatePDF = async () => {
         });
 
     } catch (error) {
-        Swal.fire({ title: 'Error', text: 'PDF failed', icon: 'error', width: '250px' });
+        console.error(error);
+        Swal.fire({ title: 'Error', text: 'PDF failed. Try again.', icon: 'error', width: '250px' });
     }
 };
 
-// Search Listener
-searchInput.oninput = () => updateList();
-// AUTO-CALCULATE AGE
-function calculateAge() {
-    const dobInput = document.getElementById('dob').value;
-    if (!dobInput) return;
-
-    const dob = new Date(dobInput);
-    const today = new Date();
-    
-    let age = today.getFullYear() - dob.getFullYear();
-    const monthDiff = today.getMonth() - dob.getMonth();
-    
-    // Adjust if birthday hasn't happened yet this year
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) {
-        age--;
-    }
-
-    document.getElementById('age').value = age;
-}
-// DELETE CURRENT CLIENT
-// DELETE CURRENT CLIENT (With Beautiful Popup)
+// 6. DELETE CLIENT (FIXED)
 async function deleteCurrentClient() {
     const id = document.getElementById('clientId').value;
 
     if (!id) {
-        Swal.fire('Error', 'No client selected.', 'error');
+        Swal.fire({ title: 'Error', text: 'No client selected', icon: 'error', width: '250px' });
         return;
     }
 
-    // Beautiful Confirmation Box
-    // COMPACT Delete Confirmation
     Swal.fire({
         title: 'Delete Client?',
         text: "Cannot undo!",
         icon: 'warning',
-        width: '280px',            // <--- MAKES IT SMALL
+        width: '280px',
         padding: '10px',
         showCancelButton: true,
         confirmButtonColor: '#d33',
         cancelButtonColor: '#3085d6',
         confirmButtonText: 'Yes',
-        cancelButtonText: 'No',
-        customClass: {
-            title: 'swal-small-title',  // We will style text smaller too
-            popup: 'swal-small-popup'
-        }
+        cancelButtonText: 'No'
     }).then(async (result) => {
         if (result.isConfirmed) {
-            await db.clients.delete(parseInt(id));
-            closeForm();
-            updateList();
+            try {
+                // 1. Delete from DB
+                await db.clients.delete(parseInt(id));
+                
+                // 2. Close Form First
+                closeForm(); 
+                
+                // 3. Update List (Await ensures it finishes)
+                await updateList();
 
-            // Small "Deleted" success message
-            Swal.fire({
-                title: 'Deleted!',
-                icon: 'success',
-                width: '250px',
-                timer: 1500,
-                showConfirmButton: false
-            });
+                // 4. Show Success
+                Swal.fire({
+                    title: 'Deleted!',
+                    icon: 'success',
+                    width: '250px',
+                    timer: 1500,
+                    showConfirmButton: false
+                });
+            } catch (err) {
+                console.error(err);
+                Swal.fire('Error', 'Could not delete.', 'error');
+            }
         }
     });
+}
+
+// Listeners
+searchInput.oninput = () => updateList();
+
+function calculateAge() {
+    const dobInput = document.getElementById('dob').value;
+    if (!dobInput) return;
+    const dob = new Date(dobInput);
+    const today = new Date();
+    let age = today.getFullYear() - dob.getFullYear();
+    const monthDiff = today.getMonth() - dob.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) {
+        age--;
+    }
+    document.getElementById('age').value = age;
 }
