@@ -1,10 +1,14 @@
-const CACHE_NAME = "astro-manager-v3";
+const CACHE_NAME = "astro-manager-v4";
 const ASSETS_TO_CACHE = [
     "./",
     "./index.html",
     "./style.css",
     "./app.js",
-    "https://unpkg.com/dexie/dist/dexie.js" 
+    "./logo.png", // Make sure logo is here too
+    "https://unpkg.com/dexie/dist/dexie.js",
+    "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js",
+    "https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js",
+    "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" // <--- ADD THIS LINE
 ];
 
 // 1. Install Service Worker & Cache Files

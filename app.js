@@ -1,8 +1,8 @@
 // 1. Initialize Database (Updated Version 2)
 const db = new Dexie('AstroAppDB');
 // Change version to 3 and add 'dob'
-db.version(3).stores({
-    clients: '++id, name, star, phone, location, age, dob, profession' 
+db.version(4).stores({
+    clients: '++id, name, star, phone, location, age, dob, birthTime, profession' 
 });
 
 // DOM Elements
@@ -41,6 +41,7 @@ form.onsubmit = async (event) => {
         star: document.getElementById('star').value,
         dob: document.getElementById('dob').value, // <--- ADD THIS LINE
         age: document.getElementById('age').value,
+        birthTime: document.getElementById('birthTime').value,
         location: document.getElementById('place').value,
         phone: document.getElementById('phone').value,
         profession: document.getElementById('profession').value,
@@ -95,6 +96,7 @@ window.loadClient = async (id) => {
     document.getElementById('star').value = client.star || "";
     document.getElementById('dob').value = client.dob || "";
     document.getElementById('age').value = client.age || "";
+    document.getElementById('birthTime').value = client.birthTime || ""; // <--- ADD THIS
     document.getElementById('place').value = client.location || "";
     document.getElementById('phone').value = client.phone || "";
     document.getElementById('profession').value = client.profession || "";
@@ -148,47 +150,74 @@ async function updateList() {
 }
 
 // 5. GENERATE PDF
+// GENERATE PDF (Malayalam Supported)
 window.generatePDF = async () => {
     const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
     
-    // Get Form Values
+    // 1. Get Data
     const name = document.getElementById('name').value;
     const star = document.getElementById('star').value;
-    const age = document.getElementById('age').value;
+    const dob = document.getElementById('dob').value;
+    const time = document.getElementById('birthTime').value; // 24h format
     
-    // Header
-    doc.setFontSize(22);
-    doc.setTextColor(46, 125, 50); // Green color
-    doc.text("Pratnya Astro Solutions", 105, 20, null, null, "center");
-    
-    doc.setFontSize(12);
-    doc.setTextColor(0, 0, 0);
-    doc.text(`Client: ${name}`, 20, 40);
-    doc.text(`Star: ${star}   Age: ${age}`, 20, 50);
-    
-    // Prepare History Table Data
+    // Convert Time to AM/PM for display
+    let displayTime = time;
+    if(time) {
+        const [h, m] = time.split(':');
+        const hour = parseInt(h);
+        const ampm = hour >= 12 ? 'PM' : 'AM';
+        const hour12 = hour % 12 || 12;
+        displayTime = `${hour12}:${m} ${ampm}`;
+    }
+
+    // 2. Build HTML Content for PDF
+    let htmlContent = `
+        <table style="width: 100%; margin-bottom: 20px; font-size: 14px;">
+            <tr><td><strong>Name:</strong> ${name}</td><td><strong>Star:</strong> ${star}</td></tr>
+            <tr><td><strong>DOB:</strong> ${dob}</td><td><strong>Time:</strong> ${displayTime}</td></tr>
+        </table>
+        <h3>Consultation History</h3>
+        <table style="width: 100%; border-collapse: collapse; border: 1px solid #ddd;">
+            <tr style="background-color: #f2f2f2;">
+                <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Date</th>
+                <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Details</th>
+            </tr>
+    `;
+
+    // Add History Rows
     const id = document.getElementById('clientId').value;
     if(id) {
         const client = await db.clients.get(parseInt(id));
         if(client && client.consultations) {
-            const tableData = client.consultations.map(c => [
-                c.date, 
-                c.problem, 
-                c.solution
-            ]);
-
-            doc.autoTable({
-                startY: 60,
-                head: [['Date', 'Problems', 'Solution']],
-                body: tableData,
-                theme: 'grid',
-                headStyles: { fillColor: [46, 125, 50] }
+            client.consultations.forEach(c => {
+                htmlContent += `
+                    <tr>
+                        <td style="border: 1px solid #ddd; padding: 8px; width: 25%; vertical-align: top;">${c.date}</td>
+                        <td style="border: 1px solid #ddd; padding: 8px;">
+                            <strong>Problem:</strong><br>${c.problem || '-'}<br><br>
+                            <strong style="color: #2E7D32;">Solution:</strong><br>${c.solution || '-'}
+                        </td>
+                    </tr>
+                `;
             });
         }
     }
+    htmlContent += `</table>`;
 
-    doc.save(`${name}_Report.pdf`);
+    // 3. Inject into Hidden Template
+    document.getElementById('pdfContent').innerHTML = htmlContent;
+
+    // 4. Capture & Save
+    const element = document.getElementById('pdfTemplate');
+    html2canvas(element, { scale: 2 }).then(canvas => {
+        const imgData = canvas.toDataURL('image/png');
+        const pdf = new jsPDF('p', 'mm', 'a4');
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+        
+        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+        pdf.save(`${name}_Report.pdf`);
+    });
 };
 
 // Search Listener

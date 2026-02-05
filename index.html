@@ -9,6 +9,7 @@
     <script src="https://unpkg.com/dexie/dist/dexie.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body>
 
@@ -45,6 +46,10 @@
     </div>
 
     <input type="number" id="age" placeholder="Age (Auto-calculated)">
+    <div style="position: relative;">
+    <label style="font-size: 12px; color: #666; position: absolute; top: -8px; left: 10px; background: white; padding: 0 4px;">Time of Birth</label>
+    <input type="time" id="birthTime">
+</div>
     
     <input type="text" id="place" placeholder="Place">
     <input type="text" id="phone" placeholder="Phone">
@@ -74,7 +79,14 @@
             </div>
         </div>
     </div>
-
+<div id="pdfTemplate" style="position: fixed; top: -9999px; left: -9999px; width: 595px; background: white; padding: 40px; font-family: 'Arial', sans-serif; color: black;">
+    <div style="text-align: center; border-bottom: 2px solid #2E7D32; padding-bottom: 10px; margin-bottom: 20px;">
+        <h1 style="color: #2E7D32; margin: 0;">Pratnya Astro Solutions</h1>
+        <p>Astrological Guidance Center</p>
+    </div>
+    <div id="pdfContent">
+        </div>
+</div>
     <script src="app.js"></script>
     <script>
         if ('serviceWorker' in navigator) {
