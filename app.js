@@ -1,7 +1,8 @@
 // 1. Initialize Database (Updated Version 2)
 const db = new Dexie('AstroAppDB');
-db.version(2).stores({
-    clients: '++id, name, star, phone, location, age, profession' // consultations is stored as object, doesn't need indexing
+// Change version to 3 and add 'dob'
+db.version(3).stores({
+    clients: '++id, name, star, phone, location, age, dob, profession' 
 });
 
 // DOM Elements
@@ -38,6 +39,7 @@ form.onsubmit = async (event) => {
     const basicData = {
         name: document.getElementById('name').value,
         star: document.getElementById('star').value,
+        dob: document.getElementById('dob').value, // <--- ADD THIS LINE
         age: document.getElementById('age').value,
         location: document.getElementById('place').value,
         phone: document.getElementById('phone').value,
@@ -91,6 +93,7 @@ window.loadClient = async (id) => {
     document.getElementById('clientId').value = client.id;
     document.getElementById('name').value = client.name;
     document.getElementById('star').value = client.star || "";
+    document.getElementById('dob').value = client.dob || "";
     document.getElementById('age').value = client.age || "";
     document.getElementById('place').value = client.location || "";
     document.getElementById('phone').value = client.phone || "";
@@ -190,3 +193,21 @@ window.generatePDF = async () => {
 
 // Search Listener
 searchInput.oninput = () => updateList();
+// AUTO-CALCULATE AGE
+function calculateAge() {
+    const dobInput = document.getElementById('dob').value;
+    if (!dobInput) return;
+
+    const dob = new Date(dobInput);
+    const today = new Date();
+    
+    let age = today.getFullYear() - dob.getFullYear();
+    const monthDiff = today.getMonth() - dob.getMonth();
+    
+    // Adjust if birthday hasn't happened yet this year
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) {
+        age--;
+    }
+
+    document.getElementById('age').value = age;
+}

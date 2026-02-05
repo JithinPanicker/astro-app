@@ -1,4 +1,4 @@
-const CACHE_NAME = "astro-manager-v2";
+const CACHE_NAME = "astro-manager-v3";
 const ASSETS_TO_CACHE = [
     "./",
     "./index.html",

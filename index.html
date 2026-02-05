@@ -13,7 +13,7 @@
 <body>
 
     <header>
-        <img src="pratnya-design-logo (1).png" alt="Pratnya Astro" class="logo">
+        <img src="logo.png" alt="Pratnya Astro" class="logo">
     </header>
 
     <div class="container">
@@ -36,13 +36,20 @@
                     <input type="hidden" id="clientId">
                     
                     <div class="form-grid">
-                        <input type="text" id="name" placeholder="Name *" required>
-                        <input type="text" id="star" placeholder="Star (Nakshatram)">
-                        <input type="number" id="age" placeholder="Age">
-                        <input type="text" id="place" placeholder="Place">
-                        <input type="text" id="phone" placeholder="Phone">
-                        <input type="text" id="profession" placeholder="Profession">
-                    </div>
+    <input type="text" id="name" placeholder="Name *" required>
+    <input type="text" id="star" placeholder="Star (Nakshatram)">
+    
+    <div style="position: relative;">
+        <label style="font-size: 12px; color: #666; position: absolute; top: -8px; left: 10px; background: white; padding: 0 4px;">Date of Birth</label>
+        <input type="date" id="dob" onchange="calculateAge()">
+    </div>
+
+    <input type="number" id="age" placeholder="Age (Auto-calculated)">
+    
+    <input type="text" id="place" placeholder="Place">
+    <input type="text" id="phone" placeholder="Phone">
+    <input type="text" id="profession" placeholder="Profession">
+</div>
 
                     <div id="historySection">
                         <h4>📜 Previous Consultations</h4>
