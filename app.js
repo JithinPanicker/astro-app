@@ -83,11 +83,14 @@ form.onsubmit = async (event) => {
     closeForm();
     updateList();
     // Success Popup
+    // COMPACT Success Popup
     Swal.fire({
         title: 'Saved!',
-        text: 'Client details saved successfully.',
         icon: 'success',
-        confirmButtonColor: '#2E7D32' // Green color
+        timer: 1500,               // Auto close after 1.5 seconds
+        showConfirmButton: false,  // No button needed (faster)
+        width: '250px',            // <--- MAKES IT SMALL
+        padding: '15px'
     });
 };
 
@@ -257,27 +260,36 @@ async function deleteCurrentClient() {
     }
 
     // Beautiful Confirmation Box
+    // COMPACT Delete Confirmation
     Swal.fire({
-        title: 'Are you sure?',
-        text: "You won't be able to revert this!",
+        title: 'Delete Client?',
+        text: "Cannot undo!",
         icon: 'warning',
+        width: '280px',            // <--- MAKES IT SMALL
+        padding: '10px',
         showCancelButton: true,
-        confirmButtonColor: '#d33', // Red for delete
-        cancelButtonColor: '#3085d6', // Blue for cancel
-        confirmButtonText: 'Yes, delete it!'
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Yes',
+        cancelButtonText: 'No',
+        customClass: {
+            title: 'swal-small-title',  // We will style text smaller too
+            popup: 'swal-small-popup'
+        }
     }).then(async (result) => {
         if (result.isConfirmed) {
-            // If user clicked "Yes", then delete
             await db.clients.delete(parseInt(id));
-            
             closeForm();
             updateList();
 
-            Swal.fire(
-                'Deleted!',
-                'The client has been removed.',
-                'success'
-            );
+            // Small "Deleted" success message
+            Swal.fire({
+                title: 'Deleted!',
+                icon: 'success',
+                width: '250px',
+                timer: 1500,
+                showConfirmButton: false
+            });
         }
     });
 }

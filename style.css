@@ -88,3 +88,8 @@ input, textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-rad
 .history-date { font-size: 11px; color: #888; position: absolute; top: 10px; right: 10px; font-weight: bold; }
 .history-label { font-size: 12px; color: #2E7D32; font-weight: bold; margin-top: 5px; display: block; }
 .history-text { font-size: 14px; color: #333; margin: 2px 0 8px 0; white-space: pre-wrap; }
+
+/* Make SweetAlert Text Smaller */
+.swal2-title { font-size: 20px !important; }
+.swal2-content { font-size: 14px !important; }
+.swal2-popup { font-size: 12px !important; }
