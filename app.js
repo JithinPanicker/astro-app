@@ -82,7 +82,13 @@ form.onsubmit = async (event) => {
 
     closeForm();
     updateList();
-    alert("Saved Successfully!");
+    // Success Popup
+    Swal.fire({
+        title: 'Saved!',
+        text: 'Client details saved successfully.',
+        icon: 'success',
+        confirmButtonColor: '#2E7D32' // Green color
+    });
 };
 
 // 3. LOAD CLIENT (View/Edit)
@@ -241,25 +247,37 @@ function calculateAge() {
     document.getElementById('age').value = age;
 }
 // DELETE CURRENT CLIENT
+// DELETE CURRENT CLIENT (With Beautiful Popup)
 async function deleteCurrentClient() {
     const id = document.getElementById('clientId').value;
 
-    // 1. Check if a client is actually selected
     if (!id) {
-        alert("No client selected to delete.");
+        Swal.fire('Error', 'No client selected.', 'error');
         return;
     }
 
-    // 2. Ask for confirmation (Safety Check)
-    const confirmDelete = confirm("Are you sure you want to PERMANENTLY delete this client? This cannot be undone.");
-    
-    if (confirmDelete) {
-        // 3. Delete from Database
-        await db.clients.delete(parseInt(id));
-        
-        // 4. Close Form and Refresh List
-        alert("Client Deleted Successfully.");
-        closeForm();
-        updateList();
-    }
+    // Beautiful Confirmation Box
+    Swal.fire({
+        title: 'Are you sure?',
+        text: "You won't be able to revert this!",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33', // Red for delete
+        cancelButtonColor: '#3085d6', // Blue for cancel
+        confirmButtonText: 'Yes, delete it!'
+    }).then(async (result) => {
+        if (result.isConfirmed) {
+            // If user clicked "Yes", then delete
+            await db.clients.delete(parseInt(id));
+            
+            closeForm();
+            updateList();
+
+            Swal.fire(
+                'Deleted!',
+                'The client has been removed.',
+                'success'
+            );
+        }
+    });
 }
