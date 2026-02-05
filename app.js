@@ -160,65 +160,83 @@ async function updateList() {
 
 // 5. GENERATE PDF
 // GENERATE PDF (Malayalam Supported)
+/* app.js - REPLACE THE PDF FUNCTION */
+
+// GENERATE PDF (With Small Popup)
 window.generatePDF = async () => {
-    const { jsPDF } = window.jspdf;
     
-    // 1. Get Data
-    const name = document.getElementById('name').value;
-    const star = document.getElementById('star').value;
-    const dob = document.getElementById('dob').value;
-    const time = document.getElementById('birthTime').value; // 24h format
-    
-    // Convert Time to AM/PM for display
-    let displayTime = time;
-    if(time) {
-        const [h, m] = time.split(':');
-        const hour = parseInt(h);
-        const ampm = hour >= 12 ? 'PM' : 'AM';
-        const hour12 = hour % 12 || 12;
-        displayTime = `${hour12}:${m} ${ampm}`;
-    }
-
-    // 2. Build HTML Content for PDF
-    let htmlContent = `
-        <table style="width: 100%; margin-bottom: 20px; font-size: 14px;">
-            <tr><td><strong>Name:</strong> ${name}</td><td><strong>Star:</strong> ${star}</td></tr>
-            <tr><td><strong>DOB:</strong> ${dob}</td><td><strong>Time:</strong> ${displayTime}</td></tr>
-        </table>
-        <h3>Consultation History</h3>
-        <table style="width: 100%; border-collapse: collapse; border: 1px solid #ddd;">
-            <tr style="background-color: #f2f2f2;">
-                <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Date</th>
-                <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Details</th>
-            </tr>
-    `;
-
-    // Add History Rows
-    const id = document.getElementById('clientId').value;
-    if(id) {
-        const client = await db.clients.get(parseInt(id));
-        if(client && client.consultations) {
-            client.consultations.forEach(c => {
-                htmlContent += `
-                    <tr>
-                        <td style="border: 1px solid #ddd; padding: 8px; width: 25%; vertical-align: top;">${c.date}</td>
-                        <td style="border: 1px solid #ddd; padding: 8px;">
-                            <strong>Problem:</strong><br>${c.problem || '-'}<br><br>
-                            <strong style="color: #2E7D32;">Solution:</strong><br>${c.solution || '-'}
-                        </td>
-                    </tr>
-                `;
-            });
+    // 1. Show "Generating..." Popup
+    Swal.fire({
+        title: 'Generating PDF...',
+        icon: 'info',
+        width: '250px',            // <--- Small Size
+        padding: '15px',
+        showConfirmButton: false,  // No button
+        didOpen: () => {
+            Swal.showLoading();    // Show loading spinner
         }
-    }
-    htmlContent += `</table>`;
+    });
 
-    // 3. Inject into Hidden Template
-    document.getElementById('pdfContent').innerHTML = htmlContent;
+    // Small delay to let the popup appear before heavy work starts
+    await new Promise(resolve => setTimeout(resolve, 500));
 
-    // 4. Capture & Save
-    const element = document.getElementById('pdfTemplate');
-    html2canvas(element, { scale: 2 }).then(canvas => {
+    try {
+        const { jsPDF } = window.jspdf;
+        
+        // Get Data
+        const name = document.getElementById('name').value;
+        const star = document.getElementById('star').value;
+        const dob = document.getElementById('dob').value;
+        const time = document.getElementById('birthTime').value;
+
+        // Time Formatting
+        let displayTime = time;
+        if(time) {
+            const [h, m] = time.split(':');
+            const hour = parseInt(h);
+            const ampm = hour >= 12 ? 'PM' : 'AM';
+            const hour12 = hour % 12 || 12;
+            displayTime = `${hour12}:${m} ${ampm}`;
+        }
+
+        // Build HTML
+        let htmlContent = `
+            <table style="width: 100%; margin-bottom: 20px; font-size: 14px;">
+                <tr><td><strong>Name:</strong> ${name}</td><td><strong>Star:</strong> ${star}</td></tr>
+                <tr><td><strong>DOB:</strong> ${dob}</td><td><strong>Time:</strong> ${displayTime}</td></tr>
+            </table>
+            <h3>Consultation History</h3>
+            <table style="width: 100%; border-collapse: collapse; border: 1px solid #ddd;">
+                <tr style="background-color: #f2f2f2;">
+                    <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Date</th>
+                    <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Details</th>
+                </tr>
+        `;
+
+        const id = document.getElementById('clientId').value;
+        if(id) {
+            const client = await db.clients.get(parseInt(id));
+            if(client && client.consultations) {
+                client.consultations.forEach(c => {
+                    htmlContent += `
+                        <tr>
+                            <td style="border: 1px solid #ddd; padding: 8px; width: 25%; vertical-align: top;">${c.date}</td>
+                            <td style="border: 1px solid #ddd; padding: 8px;">
+                                <strong>Problem:</strong><br>${c.problem || '-'}<br><br>
+                                <strong style="color: #2E7D32;">Solution:</strong><br>${c.solution || '-'}
+                            </td>
+                        </tr>
+                    `;
+                });
+            }
+        }
+        htmlContent += `</table>`;
+
+        document.getElementById('pdfContent').innerHTML = htmlContent;
+
+        // Capture & Save
+        const element = document.getElementById('pdfTemplate');
+        const canvas = await html2canvas(element, { scale: 2 });
         const imgData = canvas.toDataURL('image/png');
         const pdf = new jsPDF('p', 'mm', 'a4');
         const pdfWidth = pdf.internal.pageSize.getWidth();
@@ -226,7 +244,19 @@ window.generatePDF = async () => {
         
         pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
         pdf.save(`${name}_Report.pdf`);
-    });
+
+        // Change Popup to "Success"
+        Swal.fire({
+            title: 'Downloaded!',
+            icon: 'success',
+            width: '250px',
+            timer: 1500,
+            showConfirmButton: false
+        });
+
+    } catch (error) {
+        Swal.fire({ title: 'Error', text: 'PDF failed', icon: 'error', width: '250px' });
+    }
 };
 
 // Search Listener

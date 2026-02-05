@@ -46,7 +46,7 @@ button { border: none; border-radius: 6px; cursor: pointer; font-weight: 600; tr
 .modal-content { 
     background: white; 
     width: 100%; 
-    max-width: 380px; /* Much smaller width */
+    max-width: 600px; /* Much smaller width */
     padding: 20px; 
     border-radius: 15px; /* Nice rounded corners */
     max-height: 85vh; /* Don't touch top/bottom of screen */

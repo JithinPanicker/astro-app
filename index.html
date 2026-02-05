@@ -115,22 +115,30 @@
     }
 </script>
     <script src="app.js"></script>
-    <script>
+   <script>
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('sw.js').then(registration => {
             
-            // Check for updates every time page loads
+            // 1. Check if update is ALREADY waiting (Critical fix)
+            if (registration.waiting) {
+                document.getElementById('updateNotification').style.display = 'block';
+            }
+
+            // 2. Listen for new updates
             registration.onupdatefound = () => {
                 const installingWorker = registration.installing;
                 installingWorker.onstatechange = () => {
                     if (installingWorker.state === 'installed') {
                         if (navigator.serviceWorker.controller) {
-                            // New update available! Show the bar.
+                            // New update available
                             document.getElementById('updateNotification').style.display = 'block';
                         }
                     }
                 };
             };
+
+            // 3. Force browser to check for update immediately
+            registration.update(); 
         });
     }
 </script>
