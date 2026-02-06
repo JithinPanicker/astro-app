@@ -18,142 +18,102 @@ button { border: none; border-radius: 6px; cursor: pointer; font-weight: 600; tr
 .client-info h4 { margin: 0; color: #333; }
 .client-info p { margin: 2px 0 0; color: #666; font-size: 13px; }
 
-/* Action Buttons (View) inside List */
+/* Action Buttons */
 .actions { display: flex; gap: 8px; }
 .btn-view { background: #e3f2fd; color: #1976D2; padding: 6px 12px; border-radius: 4px; font-size: 13px; }
 
-/* --- FULL SCREEN FORM (Default for Mobile & Vertical Tablet) --- */
+/* --- MODAL (The Form Window) --- */
 .modal { 
-    position: fixed; 
-    top: 0; 
-    left: 0; 
-    width: 100%; 
-    height: 100%; 
-    background: #f0f2f5; 
-    z-index: 2000; 
-    display: flex;
-    flex-direction: column;
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+    background: #f0f2f5; z-index: 2000; 
+    display: flex; flex-direction: column;
 }
-
 .hidden { display: none; }
 
 .modal-content { 
-    background: #f0f2f5;
-    width: 100%;
-    max-width: 100%;     /* Full Width */
-    height: 100%;        /* Full Height */
-    max-height: 100vh;
-    border-radius: 0; 
-    box-shadow: none; 
-    padding: 0; 
-    display: flex;
-    flex-direction: column;
+    background: #f0f2f5; width: 100%; height: 100%; max-height: 100vh;
+    padding: 0; display: flex; flex-direction: column;
     animation: slideUp 0.3s ease-out;
 }
-
-@keyframes slideUp {
-    from { transform: translateY(100%); opacity: 0; }
-    to { transform: translateY(0); opacity: 1; }
-}
+@keyframes slideUp { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
 .modal-header { 
-    background: white; 
-    padding: 15px 20px;
-    display: flex; 
-    justify-content: space-between; 
-    align-items: center; 
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    position: sticky;
-    top: 0;
-    z-index: 10;
+    background: white; padding: 15px 20px; display: flex; justify-content: space-between; 
+    align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    position: sticky; top: 0; z-index: 10;
+}
+#clientForm { padding: 20px; overflow-y: auto; flex: 1; padding-bottom: 100px; }
+
+/* --- SMART FORM GRID (The Magic Part) --- */
+.form-grid { 
+    display: grid; 
+    gap: 15px; 
+    grid-template-columns: 1fr; /* Default Mobile: 1 Column */
 }
 
-.modal-header h3 { margin: 0; font-size: 18px; color: #333; }
-
-#clientForm {
-    padding: 20px;
-    overflow-y: auto; 
-    flex: 1; 
-    padding-bottom: 100px; 
-}
-
-/* Form Inputs */
-.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-input, textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; margin-bottom: 10px; font-family: inherit; }
-
-/* This handles the 3 buttons in one row */
+/* Inputs styling */
+input, textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; font-family: inherit; }
 .form-actions { display: flex; gap: 10px; margin-top: 20px; }
 
-/* History List Styling */
-.history-container { max-height: 300px; overflow-y: auto; background: #f9f9f9; padding: 10px; border-radius: 5px; border: 1px solid #eee; margin-bottom: 15px; }
-.history-item { background: white; border-left: 4px solid #4CAF50; padding: 10px; margin-bottom: 10px; border-radius: 4px; position: relative; }
-.history-date { font-size: 11px; color: #888; position: absolute; top: 10px; right: 10px; font-weight: bold; }
-.history-label { font-size: 12px; color: #2E7D32; font-weight: bold; margin-top: 5px; display: block; }
-.history-text { font-size: 14px; color: #333; margin: 2px 0 8px 0; white-space: pre-wrap; }
-
-/* --- SWEETALERT (POPUP) FIXES --- */
-.swal2-title { font-size: 20px !important; }
-.swal2-content { font-size: 14px !important; }
-.swal2-popup { font-size: 12px !important; }
+/* History & Popups */
+.history-item { background: white; border-left: 4px solid #4CAF50; padding: 10px; margin-bottom: 10px; position: relative; }
+.history-date { font-size: 11px; color: #888; position: absolute; top: 10px; right: 10px; }
 .swal2-container { z-index: 3000 !important; }
-.swal2-loader { border-color: #2E7D32 transparent #2E7D32 transparent !important; }
 
+/* =========================================
+   RESPONSIVE DESIGN (Professional Layout)
+   ========================================= */
 
-/* --- PART 1: TABLET MODE (Grid Layout ONLY) --- */
-/* Applies to any screen larger than a phone (768px+) */
+/* 1. TABLET (Vertical or Small) - 2 Columns */
 @media (min-width: 768px) {
+    .container { max-width: 1000px; padding: 40px; }
     
-    .container {
-        max-width: 900px; 
-        padding: 40px;
-    }
-
+    /* Dashboard Grid for Home Screen */
     #clientList {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); 
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
         gap: 20px;
     }
+    .client-item { flex-direction: column; align-items: flex-start; height: 100%; border: 1px solid #ddd; }
+    .client-info { width: 100%; border-bottom: 1px solid #eee; margin-bottom: 10px; padding-bottom: 10px; }
+    .actions { width: 100%; justify-content: flex-end; }
 
-    .client-item {
-        flex-direction: column;
-        align-items: flex-start;
-        padding: 20px;
-        border: 1px solid #e0e0e0;
-        border-radius: 12px;
-        background: #fff;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-        height: 100%; 
+    /* Form Layout: 2 Columns */
+    .form-grid {
+        grid-template-columns: 1fr 1fr; /* Name | Star */
     }
-
-    .client-info {
-        width: 100%;
-        margin-bottom: 15px;
-        padding-bottom: 10px;
-        border-bottom: 1px solid #f5f5f5;
-    }
-
-    .actions {
-        width: 100%;
-        display: flex;
-        justify-content: flex-end; 
-    }
+    /* Make History Section span both columns */
+    #historySection, .new-consultation { grid-column: span 2; }
 }
 
-/* --- PART 2: DESKTOP/LANDSCAPE MODE (Center Popup Form) --- */
-/* Only applies if screen is VERY wide (Landscape Tablet or Laptop) */
+/* 2. LAPTOP / DESKTOP (Wide Screen) - 3 or 4 Columns */
+/* This makes the form WIDER but SHORTER to fit on one screen */
 @media (min-width: 1024px) {
     
-    .modal {
-        align-items: center; /* Center vertically */
-        padding: 40px;
+    /* Center the Form Popup */
+    .modal { align-items: center; justify-content: center; padding: 20px; background: rgba(0,0,0,0.5); }
+    
+    .modal-content {
+        max-width: 900px; /* Wider box */
+        height: auto; 
+        max-height: 95vh; /* Fits inside screen */
+        border-radius: 12px; 
+        box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        background: white;
     }
 
-    .modal-content {
-        max-width: 700px; 
-        margin: 0 auto;
-        border-radius: 15px; 
-        height: auto;
-        max-height: 90vh;
-        box-shadow: 0 20px 50px rgba(0,0,0,0.2);
+    #clientForm { padding: 30px; }
+
+    /* Form Layout: 3 Columns */
+    .form-grid {
+        grid-template-columns: 1fr 1fr 1fr; 
+        /* Row 1: Name | Star | DOB */
+        /* Row 2: Time | Age  | Place */
+        /* Row 3: Phone| Prof | ...   */
+    }
+
+    /* Span Helpers */
+    #historySection, .new-consultation, .form-actions { 
+        grid-column: span 3; /* Stretch across full width */
     }
 }
