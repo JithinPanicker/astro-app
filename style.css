@@ -31,29 +31,55 @@ button { border: none; border-radius: 6px; cursor: pointer; font-weight: 600; tr
 .hidden { display: none; }
 
 .modal-content { 
-    background: #f0f2f5; width: 100%; height: 100%; max-height: 100vh;
-    padding: 0; display: flex; flex-direction: column;
+    background: #f0f2f5; 
+    width: 100%; 
+    height: 100%; 
+    max-height: 100vh;
+    padding: 0; 
+    display: flex; 
+    flex-direction: column; /* Vital for sticky footer */
     animation: slideUp 0.3s ease-out;
 }
 @keyframes slideUp { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
+/* 1. HEADER (Fixed to Top) */
 .modal-header { 
     background: white; padding: 15px 20px; display: flex; justify-content: space-between; 
     align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    position: sticky; top: 0; z-index: 10;
+    z-index: 10; flex-shrink: 0; /* Never shrink */
 }
-#clientForm { padding: 20px; overflow-y: auto; flex: 1; padding-bottom: 100px; }
 
-/* --- SMART FORM GRID (The Magic Part) --- */
+/* 2. FORM BODY (Scrollable Middle) */
+#clientForm { 
+    padding: 20px; 
+    overflow-y: auto; /* Only this part scrolls */
+    flex: 1; /* Fills all available space between header and buttons */
+    padding-bottom: 20px; /* Small gap at end of form content */
+}
+
+/* 3. BUTTON FOOTER (Fixed to Bottom) */
+/* Note: In your HTML, move <div class="form-actions"> OUTSIDE the <form> or fix CSS below */
+/* To make this work with your existing HTML structure where buttons are inside form: */
+.form-actions { 
+    position: sticky;
+    bottom: 0;
+    background: white;
+    padding: 15px;
+    margin: 0 -20px -20px -20px; /* Stretch to edges, removing parent padding */
+    border-top: 1px solid #ddd;
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+    z-index: 20;
+    gap: 10px;
+}
+
+/* SMART FORM GRID */
 .form-grid { 
     display: grid; 
     gap: 15px; 
-    grid-template-columns: 1fr; /* Default Mobile: 1 Column */
+    grid-template-columns: 1fr;
 }
 
-/* Inputs styling */
 input, textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; font-family: inherit; }
-.form-actions { display: flex; gap: 10px; margin-top: 20px; }
 
 /* History & Popups */
 .history-item { background: white; border-left: 4px solid #4CAF50; padding: 10px; margin-bottom: 10px; position: relative; }
@@ -61,14 +87,13 @@ input, textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-rad
 .swal2-container { z-index: 3000 !important; }
 
 /* =========================================
-   RESPONSIVE DESIGN (Professional Layout)
+   RESPONSIVE DESIGN 
    ========================================= */
 
-/* 1. TABLET (Vertical or Small) - 2 Columns */
+/* 1. TABLET (Vertical or Small) */
 @media (min-width: 768px) {
     .container { max-width: 1000px; padding: 40px; }
     
-    /* Dashboard Grid for Home Screen */
     #clientList {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -79,41 +104,29 @@ input, textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-rad
     .actions { width: 100%; justify-content: flex-end; }
 
     /* Form Layout: 2 Columns */
-    .form-grid {
-        grid-template-columns: 1fr 1fr; /* Name | Star */
-    }
-    /* Make History Section span both columns */
+    .form-grid { grid-template-columns: 1fr 1fr; }
     #historySection, .new-consultation { grid-column: span 2; }
 }
 
-/* 2. LAPTOP / DESKTOP (Wide Screen) - 3 or 4 Columns */
-/* This makes the form WIDER but SHORTER to fit on one screen */
+/* 2. LAPTOP / DESKTOP (Wide Screen) */
 @media (min-width: 1024px) {
     
-    /* Center the Form Popup */
     .modal { align-items: center; justify-content: center; padding: 20px; background: rgba(0,0,0,0.5); }
     
     .modal-content {
-        max-width: 900px; /* Wider box */
-        height: auto; 
-        max-height: 95vh; /* Fits inside screen */
+        max-width: 900px; 
+        height: 85vh; /* Fixed height so sticky footer works inside popup */
         border-radius: 12px; 
         box-shadow: 0 10px 40px rgba(0,0,0,0.3);
         background: white;
+        overflow: hidden; /* Clips content to rounded corners */
     }
 
     #clientForm { padding: 30px; }
+    
+    /* Adjust sticky footer margin for larger padding */
+    .form-actions { margin: 0 -30px -30px -30px; }
 
-    /* Form Layout: 3 Columns */
-    .form-grid {
-        grid-template-columns: 1fr 1fr 1fr; 
-        /* Row 1: Name | Star | DOB */
-        /* Row 2: Time | Age  | Place */
-        /* Row 3: Phone| Prof | ...   */
-    }
-
-    /* Span Helpers */
-    #historySection, .new-consultation, .form-actions { 
-        grid-column: span 3; /* Stretch across full width */
-    }
+    .form-grid { grid-template-columns: 1fr 1fr 1fr; }
+    #historySection, .new-consultation { grid-column: span 3; }
 }
