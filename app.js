@@ -53,21 +53,8 @@ window.activateLicense = function() {
         errorMsg.innerText = "Invalid Key. Please contact Admin.";
     }
 };
-// --- SPLASH SCREEN LOGIC ---
-window.addEventListener('load', () => {
-    // Keep splash screen for 2 seconds, then fade out
-    setTimeout(() => {
-        const splash = document.getElementById('splashScreen');
-        if (splash) {
-            splash.style.opacity = '0'; // Start fade
-            setTimeout(() => {
-                splash.remove(); // Delete it completely
-            }, 500);
-        }
-    }, 2000); // 2000 milliseconds = 2 seconds
-});
 
-// 1. Initialize Database
+// 3. Initialize Database
 const db = new Dexie('AstroAppDB');
 db.version(4).stores({
     clients: '++id, name, star, phone, location, age, dob, birthTime, profession' 
@@ -315,7 +302,7 @@ window.generatePDF = async () => {
     }
 };
 
-// 6. DELETE CLIENT (Instant Fix)
+// 6. DELETE CLIENT
 async function deleteCurrentClient() {
     const id = document.getElementById('clientId').value;
 
@@ -337,17 +324,9 @@ async function deleteCurrentClient() {
         cancelButtonText: 'No'
     }).then(async (result) => {
         if (result.isConfirmed) {
-            
-            // 1. DELETE FROM DB FIRST
             await db.clients.delete(parseInt(id));
-            
-            // 2. CLOSE FORM IMMEDIATELY (So it disappears)
             closeForm();
-
-            // 3. REFRESH LIST IN BACKGROUND
             await updateList();
-
-            // 4. SHOW SUCCESS POPUP (On Home Screen)
             Swal.fire({
                 title: 'Deleted!',
                 icon: 'success',

@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pratnya Astro Manager</title>
     <link rel="apple-touch-icon" href="logo.png">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="stylesheet" href="style.css">
     <link rel="manifest" href="manifest.json">
     <script src="https://unpkg.com/dexie/dist/dexie.js"></script>
@@ -16,72 +16,44 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 <body>
-    <div id="splashScreen" style="
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: #ffffff;
-    z-index: 99999;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    transition: opacity 0.5s ease-out;
-">
-    <img src="logo.png" id="splashLogo" style="width: 180px; transition: width 0.3s;">
-    
-    <h2 style="color: #2E7D32; font-family: sans-serif; margin-top: 20px; font-size: 24px;">Pratnya Astro Manager</h2>
-</div>
 
-<style>
-    /* Mobile Default: 180px (Already Big) */
-    
-    /* Tablet & Laptop: Make it GIANT (350px) */
-    @media (min-width: 768px) {
-        #splashLogo {
-            width: 350px !important; /* Huge size for tablets */
-        }
-    }
-</style>
     <div id="licenseScreen" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #1a1a1a; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; text-align: center; padding: 20px; box-sizing: border-box;">
-    
-    <img src="logo.png" style="width: 130px; margin-bottom: 20px;">
-    
-    <h2 style="margin: 0; font-size: 24px;">Pratnya Astro Manager</h2>
-    <p style="color: #aaa; margin: 5px 0 25px 0;">Premium Subscription Required</p>
-
-    <div style="background: #333; padding: 25px; border-radius: 15px; width: 90%; max-width: 450px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
-        <h3 style="margin: 0 0 10px 0; color: #4CAF50; font-size: 22px;">₹2,500 / Year</h3>
-        <p style="font-size: 14px; color: #ccc;">Full Access to Client Management & PDF Reports.</p>
         
-        <div style="background: white; padding: 10px; margin: 20px 0; border-radius: 8px;">
-            <img src="https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=upi://pay?pa=YOUR_UPI_ID_HERE&pn=PratnyaAstro&am=2500" alt="Pay via UPI" style="width: 100%; display: block;">
+        <img src="logo.png" style="width: 130px; margin-bottom: 20px;">
+        
+        <h2 style="margin: 0; font-size: 24px;">Pratnya Astro Manager</h2>
+        <p style="color: #aaa; margin: 5px 0 25px 0;">Premium Subscription Required</p>
+
+        <div style="background: #333; padding: 25px; border-radius: 15px; width: 90%; max-width: 450px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+            <h3 style="margin: 0 0 10px 0; color: #4CAF50; font-size: 22px;">₹2,500 / Year</h3>
+            <p style="font-size: 14px; color: #ccc;">Full Access to Client Management & PDF Reports.</p>
+            
+            <div style="background: white; padding: 10px; margin: 20px 0; border-radius: 8px;">
+                <img src="https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=upi://pay?pa=YOUR_UPI_ID_HERE&pn=PratnyaAstro&am=2500" alt="Pay via UPI" style="width: 100%; display: block;">
+            </div>
+            
+            <p style="font-size: 13px; color: #bbb;">Pay via GPay / PhonePe / Paytm</p>
+        </div>
+
+        <div style="margin-top: 25px; width: 90%; max-width: 450px;">
+            <input type="text" id="licenseKeyInput" placeholder="Enter License Key" style="width: 100%; padding: 15px; border: none; border-radius: 8px; text-align: center; margin-bottom: 12px; font-size: 16px; box-sizing: border-box;">
+            
+            <button onclick="activateLicense()" style="width: 100%; padding: 15px; background: #2196F3; color: white; border: none; border-radius: 8px; font-weight: bold; font-size: 16px; cursor: pointer; box-shadow: 0 4px 15px rgba(33, 150, 243, 0.3);">
+                Activate App
+            </button>
         </div>
         
-        <p style="font-size: 13px; color: #bbb;">Pay via GPay / PhonePe / Paytm</p>
+        <p id="licenseError" style="color: #ff5252; font-size: 14px; margin-top: 15px; display: none;">Invalid License Key</p>
     </div>
-
-    <div style="margin-top: 25px; width: 90%; max-width: 450px;">
-        <input type="text" id="licenseKeyInput" placeholder="Enter License Key" style="width: 100%; padding: 15px; border: none; border-radius: 8px; text-align: center; margin-bottom: 12px; font-size: 16px; box-sizing: border-box;">
-        
-        <button onclick="activateLicense()" style="width: 100%; padding: 15px; background: #2196F3; color: white; border: none; border-radius: 8px; font-weight: bold; font-size: 16px; cursor: pointer; box-shadow: 0 4px 15px rgba(33, 150, 243, 0.3);">
-            Activate App
-        </button>
-    </div>
-    
-    <p id="licenseError" style="color: #ff5252; font-size: 14px; margin-top: 15px; display: none;">Invalid License Key</p>
-</div>
 
     <header style="position: sticky; top: 0; z-index: 100; background: white; box-shadow: 0 2px 5px rgba(0,0,0,0.1); padding: 10px; display: flex; justify-content: center; align-items: center;">
-    <img src="logo.png" alt="Pratnya Astro" class="logo">
-    
-    <div id="updateIcon" onclick="showUpdateInfo()" style="display: none; position: absolute; right: 20px; cursor: pointer;">
-        <span style="font-size: 24px;">🔔</span>
-        <span style="position: absolute; top: 0; right: 0; width: 10px; height: 10px; background: red; border-radius: 50%;"></span>
-    </div>
-</header>
+        <img src="logo.png" alt="Pratnya Astro" class="logo">
+        
+        <div id="updateIcon" onclick="showUpdateInfo()" style="display: none; position: absolute; right: 20px; cursor: pointer;">
+            <span style="font-size: 24px;">🔔</span>
+            <span style="position: absolute; top: 0; right: 0; width: 10px; height: 10px; background: red; border-radius: 50%;"></span>
+        </div>
+    </header>
 
     <div class="container">
         <div class="search-box">
@@ -103,29 +75,29 @@
                     <input type="hidden" id="clientId">
                     
                     <div class="form-grid">
-    <input type="text" id="name" placeholder="Name *" required>
-    <input type="text" id="star" placeholder="Star (Nakshatram)">
-    
-    <div style="position: relative;">
-        <label style="font-size: 12px; color: #666; position: absolute; top: -8px; left: 10px; background: white; padding: 0 4px;">Date of Birth</label>
-        <input type="date" id="dob" onchange="calculateAge()">
-    </div>
+                        <input type="text" id="name" placeholder="Name *" required>
+                        <input type="text" id="star" placeholder="Star (Nakshatram)">
+                        
+                        <div style="position: relative;">
+                            <label style="font-size: 12px; color: #666; position: absolute; top: -8px; left: 10px; background: white; padding: 0 4px;">Date of Birth</label>
+                            <input type="date" id="dob" onchange="calculateAge()">
+                        </div>
 
-    <input type="number" id="age" placeholder="Age (Auto-calculated)">
-    <div style="position: relative;">
-    <label style="font-size: 12px; color: #666; position: absolute; top: -8px; left: 10px; background: white; padding: 0 4px;">Time of Birth</label>
-    <input type="time" id="birthTime">
-</div>
-    
-    <input type="text" id="place" placeholder="Place">
-    <input type="text" id="phone" placeholder="Phone">
-    <input type="text" id="profession" placeholder="Profession">
-</div>
+                        <input type="number" id="age" placeholder="Age (Auto-calculated)">
+                        <div style="position: relative;">
+                            <label style="font-size: 12px; color: #666; position: absolute; top: -8px; left: 10px; background: white; padding: 0 4px;">Time of Birth</label>
+                            <input type="time" id="birthTime">
+                        </div>
+                        
+                        <input type="text" id="place" placeholder="Place">
+                        <input type="text" id="phone" placeholder="Phone">
+                        <input type="text" id="profession" placeholder="Profession">
+                    </div>
 
                     <div id="historySection">
                         <h4>Previous Consultations</h4>
                         <div id="historyList" class="history-container">
-                            </div>
+                        </div>
                     </div>
 
                     <div class="new-consultation">
@@ -137,140 +109,76 @@
                         <textarea id="currentSolution" rows="3" placeholder="Enter solution here..."></textarea>
                     </div>
 
-<div class="form-actions" style="display: flex; gap: 10px; margin-top: 20px;">
-    
-    <button type="submit" style="flex: 1; background-color: #2E7D32; color: white; padding: 12px; border: none; border-radius: 8px; font-weight: bold;">
-        Save
-    </button>
-    
-    <button type="button" onclick="generatePDF()" style="flex: 1; background-color: #1976D2; color: white; padding: 12px; border: none; border-radius: 8px; font-weight: bold;">
-        PDF
-    </button>
-
-    <button type="button" onclick="deleteCurrentClient()" style="flex: 1; background-color: #D32F2F; color: white; padding: 12px; border: none; border-radius: 8px; font-weight: bold;">
-        Delete
-    </button>
-
-</div>
+                    <div class="form-actions" style="display: flex; gap: 10px; margin-top: 20px;">
+                        <button type="submit" style="flex: 1; background-color: #2E7D32; color: white; padding: 12px; border: none; border-radius: 8px; font-weight: bold;">Save</button>
+                        <button type="button" onclick="generatePDF()" style="flex: 1; background-color: #1976D2; color: white; padding: 12px; border: none; border-radius: 8px; font-weight: bold;">PDF</button>
+                        <button type="button" onclick="deleteCurrentClient()" style="flex: 1; background-color: #D32F2F; color: white; padding: 12px; border: none; border-radius: 8px; font-weight: bold;">Delete</button>
+                    </div>
                 </form>
             </div>
         </div>
     </div>
-<div id="pdfTemplate" style="position: fixed; top: -9999px; left: -9999px; width: 595px; background: white; padding: 40px; font-family: 'Arial', sans-serif; color: black;">
-    
-    <div style="text-align: center; border-bottom: 2px solid #2E7D32; padding-bottom: 15px; margin-bottom: 20px;">
-        <img src="logo.png" style="height: 80px; width: auto;" alt="Logo">
+
+    <div id="pdfTemplate" style="position: fixed; top: -9999px; left: -9999px; width: 595px; background: white; padding: 40px; font-family: 'Arial', sans-serif; color: black;">
+        <div style="text-align: center; border-bottom: 2px solid #2E7D32; padding-bottom: 15px; margin-bottom: 20px;">
+            <img src="logo.png" style="height: 80px; width: auto;" alt="Logo">
+        </div>
+        <div id="pdfContent"></div>
     </div>
 
-    <div id="pdfContent">
-        </div>
-    
-    <!-- <div style="text-align: center; margin-top: 30px; font-size: 10px; color: #888;">
-        Generated by Pratnya Astro Manager
-    </div> -->
-</div>
-
-<script>
-    function reloadApp() {
-        // This forces the new service worker to take over
-        if (navigator.serviceWorker.controller) {
-            navigator.serviceWorker.controller.postMessage({ type: 'SKIP_WAITING' });
-        }
-        window.location.reload();
-    }
-</script>
     <script src="app.js"></script>
-   <script>
-    // ------------------------------------------------
-    // 📝 DEVELOPER: WRITE YOUR CHANGES HERE
-    // Every time you update, change this text!
-    const LATEST_CHANGES = "Fixed Delete Speed & PDF Loading";
-    // ------------------------------------------------
-
-    let newWorker;
-
-    if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('sw.js').then(registration => {
-            
-            // 1. Check if update is ALREADY waiting
-            if (registration.waiting) {
-                newWorker = registration.waiting;
-                showNotificationIcon();
-            }
-
-            // 2. Listen for new updates arriving
-            registration.onupdatefound = () => {
-                const installingWorker = registration.installing;
-                installingWorker.onstatechange = () => {
-                    if (installingWorker.state === 'installed') {
-                        if (navigator.serviceWorker.controller) {
-                            // New update downloaded!
-                            newWorker = installingWorker;
-                            showNotificationIcon();
+    <script>
+        const LATEST_CHANGES = "Removed Extra Splash Screen";
+        
+        let newWorker;
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js').then(registration => {
+                if (registration.waiting) {
+                    newWorker = registration.waiting;
+                    showNotificationIcon();
+                }
+                registration.onupdatefound = () => {
+                    const installingWorker = registration.installing;
+                    installingWorker.onstatechange = () => {
+                        if (installingWorker.state === 'installed') {
+                            if (navigator.serviceWorker.controller) {
+                                newWorker = installingWorker;
+                                showNotificationIcon();
+                            }
                         }
-                    }
+                    };
                 };
-            };
-        });
-    }
-
-    // Show the Bell Icon
-    function showNotificationIcon() {
-        document.getElementById('updateIcon').style.display = 'block';
-    }
-
-    // Show the "What's New" Popup
-    function showUpdateInfo() {
-        Swal.fire({
-            title: '🚀 Update Available!',
-            html: `<div style="text-align: left; font-size: 14px; color: #555;">
-                    <strong>What's New:</strong><br>${LATEST_CHANGES}
-                   </div>`,
-            icon: 'info',
-            showCancelButton: true,
-            confirmButtonText: 'Update Now',
-            confirmButtonColor: '#4CAF50',
-            cancelButtonText: 'Later'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                performUpdate();
-            }
-        });
-    }
-
-    // Run the Update with Progress Bar
-    function performUpdate() {
-        if (!newWorker) {
-            window.location.reload();
-            return;
+            });
         }
 
-        let timerInterval;
-        Swal.fire({
-            title: 'Updating...',
-            html: 'Installing new features... <b></b>%',
-            timer: 2000, // Simulate a 2-second install
-            timerProgressBar: true,
-            allowOutsideClick: false,
-            didOpen: () => {
-                Swal.showLoading();
-                const b = Swal.getHtmlContainer().querySelector('b');
-                let progress = 0;
-                timerInterval = setInterval(() => {
-                    progress += 5;
-                    if(progress > 100) progress = 100;
-                    b.textContent = progress;
-                }, 100);
-            },
-            willClose: () => {
-                clearInterval(timerInterval);
+        function showNotificationIcon() {
+            document.getElementById('updateIcon').style.display = 'block';
+        }
+
+        function showUpdateInfo() {
+            Swal.fire({
+                title: '🚀 Update Available!',
+                html: `<div style="text-align: left; font-size: 14px; color: #555;"><strong>What's New:</strong><br>${LATEST_CHANGES}</div>`,
+                icon: 'info',
+                showCancelButton: true,
+                confirmButtonText: 'Update Now',
+                confirmButtonColor: '#4CAF50',
+                cancelButtonText: 'Later'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    performUpdate();
+                }
+            });
+        }
+
+        function performUpdate() {
+            if (!newWorker) {
+                window.location.reload();
+                return;
             }
-        }).then((result) => {
-            // Actually apply the update
             newWorker.postMessage({ type: 'SKIP_WAITING' });
             window.location.reload();
-        });
-    }
-</script>
+        }
+    </script>
 </body>
 </html>
