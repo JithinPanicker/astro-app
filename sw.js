@@ -1,10 +1,11 @@
-const CACHE_NAME = "astro-manager-v22"; // INCREMENT THIS EVERY TIME YOU CHANGE CODE
+const CACHE_NAME = "astro-manager-v23"; // INCREMENT THIS EVERY TIME YOU CHANGE CODE
 const ASSETS_TO_CACHE = [
     "./",
     "./index.html",
     "./style.css",
     "./app.js",
     "./logo.png",
+    "./manifest.json",
     "https://unpkg.com/dexie/dist/dexie.js",
     "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js",
     "https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js",
