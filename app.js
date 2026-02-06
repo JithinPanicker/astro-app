@@ -53,6 +53,19 @@ window.activateLicense = function() {
         errorMsg.innerText = "Invalid Key. Please contact Admin.";
     }
 };
+// --- SPLASH SCREEN LOGIC ---
+window.addEventListener('load', () => {
+    // Keep splash screen for 2 seconds, then fade out
+    setTimeout(() => {
+        const splash = document.getElementById('splashScreen');
+        if (splash) {
+            splash.style.opacity = '0'; // Start fade
+            setTimeout(() => {
+                splash.remove(); // Delete it completely
+            }, 500);
+        }
+    }, 2000); // 2000 milliseconds = 2 seconds
+});
 
 // 1. Initialize Database
 const db = new Dexie('AstroAppDB');
