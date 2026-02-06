@@ -22,7 +22,7 @@ button { border: none; border-radius: 6px; cursor: pointer; font-weight: 600; tr
 .actions { display: flex; gap: 8px; }
 .btn-view { background: #e3f2fd; color: #1976D2; padding: 6px 12px; border-radius: 4px; font-size: 13px; }
 
-/* --- FULL SCREEN FORM (Mobile Default) --- */
+/* --- FULL SCREEN FORM (Default for Mobile & Vertical Tablet) --- */
 .modal { 
     position: fixed; 
     top: 0; 
@@ -30,7 +30,7 @@ button { border: none; border-radius: 6px; cursor: pointer; font-weight: 600; tr
     width: 100%; 
     height: 100%; 
     background: #f0f2f5; 
-    z-index: 2000; /* High z-index */
+    z-index: 2000; 
     display: flex;
     flex-direction: column;
 }
@@ -40,8 +40,8 @@ button { border: none; border-radius: 6px; cursor: pointer; font-weight: 600; tr
 .modal-content { 
     background: #f0f2f5;
     width: 100%;
-    max-width: 100%;     /* Full Width on Mobile */
-    height: 100%;        /* Full Height on Mobile */
+    max-width: 100%;     /* Full Width */
+    height: 100%;        /* Full Height */
     max-height: 100vh;
     border-radius: 0; 
     box-shadow: none; 
@@ -92,32 +92,28 @@ input, textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-rad
 .history-text { font-size: 14px; color: #333; margin: 2px 0 8px 0; white-space: pre-wrap; }
 
 /* --- SWEETALERT (POPUP) FIXES --- */
-/* Make text smaller */
 .swal2-title { font-size: 20px !important; }
 .swal2-content { font-size: 14px !important; }
 .swal2-popup { font-size: 12px !important; }
-
-/* Force Popups above the Full Screen Form (CRITICAL FIX) */
 .swal2-container { z-index: 3000 !important; }
 .swal2-loader { border-color: #2E7D32 transparent #2E7D32 transparent !important; }
 
-/* --- TABLET & DESKTOP MODE (The Grid Layout) --- */
+
+/* --- PART 1: TABLET MODE (Grid Layout ONLY) --- */
+/* Applies to any screen larger than a phone (768px+) */
 @media (min-width: 768px) {
     
-    /* 1. Wider Container */
     .container {
-        max-width: 900px;
+        max-width: 900px; 
         padding: 40px;
     }
 
-    /* 2. Grid Layout for List */
     #clientList {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); 
         gap: 20px;
     }
 
-    /* 3. Card Styling for Grid */
     .client-item {
         flex-direction: column;
         align-items: flex-start;
@@ -141,10 +137,14 @@ input, textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-rad
         display: flex;
         justify-content: flex-end; 
     }
+}
 
-    /* 4. Center the Form Window on Tablets (Not Full Screen) */
+/* --- PART 2: DESKTOP/LANDSCAPE MODE (Center Popup Form) --- */
+/* Only applies if screen is VERY wide (Landscape Tablet or Laptop) */
+@media (min-width: 1024px) {
+    
     .modal {
-        align-items: center; 
+        align-items: center; /* Center vertically */
         padding: 40px;
     }
 
