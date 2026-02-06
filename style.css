@@ -10,8 +10,6 @@ header { background: white; padding: 10px; text-align: center; box-shadow: 0 2px
 /* Buttons */
 button { border: none; border-radius: 6px; cursor: pointer; font-weight: 600; transition: 0.2s; }
 .btn-new { width: 100%; padding: 15px; background: #4CAF50; color: white; font-size: 16px; margin-bottom: 15px; }
-.btn-save { background: #2E7D32; color: white; padding: 12px; flex: 2; margin-right: 10px; }
-.btn-pdf { background: #D32F2F; color: white; padding: 12px; flex: 1; }
 .btn-close { background: transparent; font-size: 20px; color: #666; }
 
 /* Search & List */
@@ -20,20 +18,19 @@ button { border: none; border-radius: 6px; cursor: pointer; font-weight: 600; tr
 .client-info h4 { margin: 0; color: #333; }
 .client-info p { margin: 2px 0 0; color: #666; font-size: 13px; }
 
-/* Action Buttons (View/Delete) */
+/* Action Buttons (View) inside List */
 .actions { display: flex; gap: 8px; }
 .btn-view { background: #e3f2fd; color: #1976D2; padding: 6px 12px; border-radius: 4px; font-size: 13px; }
-.btn-del { background: #ffebee; color: #c62828; padding: 6px 12px; border-radius: 4px; font-size: 13px; }
 
-/* FULL SCREEN FORM (Like a Page) */
+/* --- FULL SCREEN FORM (Mobile Default) --- */
 .modal { 
     position: fixed; 
     top: 0; 
     left: 0; 
     width: 100%; 
     height: 100%; 
-    background: #f0f2f5; /* Same gray as main app */
-    z-index: 2000;       /* On top of everything */
+    background: #f0f2f5; 
+    z-index: 2000; /* High z-index */
     display: flex;
     flex-direction: column;
 }
@@ -43,24 +40,22 @@ button { border: none; border-radius: 6px; cursor: pointer; font-weight: 600; tr
 .modal-content { 
     background: #f0f2f5;
     width: 100%;
-    max-width: 100%;     /* Full Width */
-    height: 100%;        /* Full Height */
+    max-width: 100%;     /* Full Width on Mobile */
+    height: 100%;        /* Full Height on Mobile */
     max-height: 100vh;
-    border-radius: 0;    /* No rounded corners */
-    box-shadow: none;    /* No shadow */
-    padding: 0;          /* Reset padding */
+    border-radius: 0; 
+    box-shadow: none; 
+    padding: 0; 
     display: flex;
     flex-direction: column;
-    animation: slideUp 0.3s ease-out; /* Slide up animation */
+    animation: slideUp 0.3s ease-out;
 }
 
-/* Slide Up Animation */
 @keyframes slideUp {
     from { transform: translateY(100%); opacity: 0; }
     to { transform: translateY(0); opacity: 1; }
 }
 
-/* Header stays stuck to top */
 .modal-header { 
     background: white; 
     padding: 15px 20px;
@@ -75,17 +70,19 @@ button { border: none; border-radius: 6px; cursor: pointer; font-weight: 600; tr
 
 .modal-header h3 { margin: 0; font-size: 18px; color: #333; }
 
-/* The Scrollable Area */
 #clientForm {
     padding: 20px;
-    overflow-y: auto;    /* Allow scrolling */
-    flex: 1;             /* Fill remaining space */
-    padding-bottom: 100px; /* Space for buttons at bottom */
+    overflow-y: auto; 
+    flex: 1; 
+    padding-bottom: 100px; 
 }
+
 /* Form Inputs */
 .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 input, textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; margin-bottom: 10px; font-family: inherit; }
-.form-actions { display: flex; margin-top: 20px; }
+
+/* This handles the 3 buttons in one row */
+.form-actions { display: flex; gap: 10px; margin-top: 20px; }
 
 /* History List Styling */
 .history-container { max-height: 300px; overflow-y: auto; background: #f9f9f9; padding: 10px; border-radius: 5px; border: 1px solid #eee; margin-bottom: 15px; }
@@ -94,18 +91,69 @@ input, textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-rad
 .history-label { font-size: 12px; color: #2E7D32; font-weight: bold; margin-top: 5px; display: block; }
 .history-text { font-size: 14px; color: #333; margin: 2px 0 8px 0; white-space: pre-wrap; }
 
-/* Make SweetAlert Text Smaller */
+/* --- SWEETALERT (POPUP) FIXES --- */
+/* Make text smaller */
 .swal2-title { font-size: 20px !important; }
 .swal2-content { font-size: 14px !important; }
 .swal2-popup { font-size: 12px !important; }
 
-/* --- FIX POPUP VISIBILITY --- */
-/* Your form is 2000, so we make popups 3000 */
-.swal2-container {
-    z-index: 3000 !important;
-}
+/* Force Popups above the Full Screen Form (CRITICAL FIX) */
+.swal2-container { z-index: 3000 !important; }
+.swal2-loader { border-color: #2E7D32 transparent #2E7D32 transparent !important; }
 
-/* Also ensure the loading spinner is visible */
-.swal2-loader {
-    border-color: #2E7D32 transparent #2E7D32 transparent !important;
+/* --- TABLET & DESKTOP MODE (The Grid Layout) --- */
+@media (min-width: 768px) {
+    
+    /* 1. Wider Container */
+    .container {
+        max-width: 900px;
+        padding: 40px;
+    }
+
+    /* 2. Grid Layout for List */
+    #clientList {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); 
+        gap: 20px;
+    }
+
+    /* 3. Card Styling for Grid */
+    .client-item {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 20px;
+        border: 1px solid #e0e0e0;
+        border-radius: 12px;
+        background: #fff;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        height: 100%; 
+    }
+
+    .client-info {
+        width: 100%;
+        margin-bottom: 15px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #f5f5f5;
+    }
+
+    .actions {
+        width: 100%;
+        display: flex;
+        justify-content: flex-end; 
+    }
+
+    /* 4. Center the Form Window on Tablets (Not Full Screen) */
+    .modal {
+        align-items: center; 
+        padding: 40px;
+    }
+
+    .modal-content {
+        max-width: 700px; 
+        margin: 0 auto;
+        border-radius: 15px; 
+        height: auto;
+        max-height: 90vh;
+        box-shadow: 0 20px 50px rgba(0,0,0,0.2);
+    }
 }
