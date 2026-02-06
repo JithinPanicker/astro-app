@@ -2,11 +2,27 @@
 body { font-family: 'Segoe UI', sans-serif; background-color: #f0f2f5; margin: 0; padding-bottom: 80px; }
 header { background: white; padding: 10px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 100; }
 
-/* Logo Style */
-.logo { max-height: 60px; width: auto; }
+/* --- NEW LARGER LOGO STYLES --- */
 
-.container { padding: 15px; max-width: 600px; margin: auto; }
+/* 1. Mobile Phone Size (Larger) */
+.logo { 
+    max-height: 90px;  /* Increased from 60px to 90px */
+    width: auto; 
+    transition: all 0.3s ease; /* Smooth transition */
+}
 
+/* 2. Tablet & Laptop Size (Much Larger) */
+/* This matches the media query we used for the Grid Layout */
+@media (min-width: 768px) {
+    .logo {
+        max-height: 140px; /* Huge size for big screens */
+    }
+    
+    /* Optional: Increase Header padding to fit the big logo */
+    header {
+        padding: 20px 10px;
+    }
+}
 /* Buttons */
 button { border: none; border-radius: 6px; cursor: pointer; font-weight: 600; transition: 0.2s; }
 .btn-new { width: 100%; padding: 15px; background: #4CAF50; color: white; font-size: 16px; margin-bottom: 15px; }
