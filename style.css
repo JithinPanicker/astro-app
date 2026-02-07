@@ -31,54 +31,55 @@ button { border: none; border-radius: 6px; cursor: pointer; font-weight: 600; tr
 .hidden { display: none; }
 
 .modal-content { 
-    background: #f0f2f5; 
-    width: 100%; 
-    height: 100%; 
-    max-height: 100vh;
-    padding: 0; 
-    display: flex; 
-    flex-direction: column; /* Vital for sticky footer */
+    background: #f0f2f5; width: 100%; height: 100%; max-height: 100vh;
+    padding: 0; display: flex; flex-direction: column;
     animation: slideUp 0.3s ease-out;
 }
 @keyframes slideUp { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
-/* 1. HEADER (Fixed to Top) */
 .modal-header { 
     background: white; padding: 15px 20px; display: flex; justify-content: space-between; 
     align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    z-index: 10; flex-shrink: 0; /* Never shrink */
+    z-index: 10; flex-shrink: 0;
 }
+#clientForm { padding: 20px; overflow-y: auto; flex: 1; padding-bottom: 20px; }
 
-/* 2. FORM BODY (Scrollable Middle) */
-#clientForm { 
-    padding: 20px; 
-    overflow-y: auto; /* Only this part scrolls */
-    flex: 1; /* Fills all available space between header and buttons */
-    padding-bottom: 20px; /* Small gap at end of form content */
-}
-
-/* 3. BUTTON FOOTER (Fixed to Bottom) */
-/* Note: In your HTML, move <div class="form-actions"> OUTSIDE the <form> or fix CSS below */
-/* To make this work with your existing HTML structure where buttons are inside form: */
+/* --- 1. FIXED BUTTON ALIGNMENT (Important) --- */
 .form-actions { 
-    position: sticky;
-    bottom: 0;
-    background: white;
-    padding: 15px;
-    margin: 0 -20px -20px -20px; /* Stretch to edges, removing parent padding */
+    position: sticky; bottom: 0; background: white;
+    padding: 15px 20px; /* Match form padding */
+    margin: 0 -20px -20px -20px; /* Stretch to edges */
     border-top: 1px solid #ddd;
     box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
     z-index: 20;
-    gap: 10px;
+    
+    /* Flexbox Magic for Perfect Alignment */
+    display: flex; 
+    gap: 10px; 
+    justify-content: space-between;
+}
+
+/* Force all buttons to be equal width */
+.form-actions button {
+    flex: 1; /* Grow to fill space equally */
+    text-align: center;
+    padding: 12px 0; /* Uniform height */
+    margin: 0; /* Remove default margins */
+}
+
+/* --- 2. NEW GHOST BUTTON (For Prescription) --- */
+.btn-ghost {
+    background: transparent;
+    border: 1px solid #FF9800; /* Orange Outline */
+    color: #E65100;
+    padding: 4px 10px;
+    font-size: 12px;
+    border-radius: 4px;
+    margin-left: 10px;
 }
 
 /* SMART FORM GRID */
-.form-grid { 
-    display: grid; 
-    gap: 15px; 
-    grid-template-columns: 1fr;
-}
-
+.form-grid { display: grid; gap: 15px; grid-template-columns: 1fr; }
 input, textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; font-family: inherit; }
 
 /* History & Popups */
@@ -86,47 +87,23 @@ input, textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-rad
 .history-date { font-size: 11px; color: #888; position: absolute; top: 10px; right: 10px; }
 .swal2-container { z-index: 3000 !important; }
 
-/* =========================================
-   RESPONSIVE DESIGN 
-   ========================================= */
-
-/* 1. TABLET (Vertical or Small) */
+/* TABLET & DESKTOP */
 @media (min-width: 768px) {
     .container { max-width: 1000px; padding: 40px; }
-    
-    #clientList {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-        gap: 20px;
-    }
+    #clientList { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
     .client-item { flex-direction: column; align-items: flex-start; height: 100%; border: 1px solid #ddd; }
     .client-info { width: 100%; border-bottom: 1px solid #eee; margin-bottom: 10px; padding-bottom: 10px; }
     .actions { width: 100%; justify-content: flex-end; }
-
-    /* Form Layout: 2 Columns */
     .form-grid { grid-template-columns: 1fr 1fr; }
     #historySection, .new-consultation { grid-column: span 2; }
 }
 
-/* 2. LAPTOP / DESKTOP (Wide Screen) */
 @media (min-width: 1024px) {
-    
     .modal { align-items: center; justify-content: center; padding: 20px; background: rgba(0,0,0,0.5); }
-    
-    .modal-content {
-        max-width: 900px; 
-        height: 85vh; /* Fixed height so sticky footer works inside popup */
-        border-radius: 12px; 
-        box-shadow: 0 10px 40px rgba(0,0,0,0.3);
-        background: white;
-        overflow: hidden; /* Clips content to rounded corners */
-    }
-
+    .modal-content { max-width: 900px; height: 85vh; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); background: white; overflow: hidden; }
     #clientForm { padding: 30px; }
-    
-    /* Adjust sticky footer margin for larger padding */
-    .form-actions { margin: 0 -30px -30px -30px; }
-
+    /* Fix sticky footer margin for larger padding */
+    .form-actions { margin: 0 -30px -30px -30px; padding: 20px 30px; }
     .form-grid { grid-template-columns: 1fr 1fr 1fr; }
     #historySection, .new-consultation { grid-column: span 3; }
 }

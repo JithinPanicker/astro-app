@@ -80,13 +80,21 @@
                     </div>
 
                     <div class="new-consultation">
-                        <h4>➕ Add New Consultation</h4>
-                        <label>Case History (Problems):</label>
-                        <textarea id="currentProblem" rows="3" placeholder="Enter problems here..."></textarea>
-                        
-                        <label style="color: #2E7D32; font-weight: bold;">Astrological Solution (Auto-generates Page 2):</label>
-                        <textarea id="currentSolution" rows="5" placeholder="Write the solution/remedy here..."></textarea>
-                    </div>
+    <h4>➕ Add New Consultation</h4>
+    
+    <label>Case History (Problems):</label>
+    <textarea id="currentProblem" rows="3" placeholder="Enter problems here..."></textarea>
+    
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px; margin-bottom: 5px;">
+        <label style="color: #2E7D32; font-weight: bold; margin: 0;">Astrological Solution:</label>
+        
+        <button type="button" onclick="transferToPrescription()" class="btn-ghost">
+            📄 Open as Prescription
+        </button>
+    </div>
+
+    <textarea id="currentSolution" rows="5" placeholder="Write solution here..."></textarea>
+</div>
 
                     <div class="form-actions">
                         <button type="submit" style="flex: 1; background-color: #2E7D32; color: white; padding: 12px; border: none; border-radius: 8px; font-weight: bold;">Save</button>
@@ -100,7 +108,7 @@
         <div id="prescriptionModal" class="modal hidden">
             <div class="modal-content">
                 <div class="modal-header" style="background: #FFF3E0;">
-                    <h3 style="color: #E65100;">📝 Write Prescription</h3>
+                    <h3 style="color: #E65100;">Write Prescription</h3>
                     <button onclick="closePrescriptionForm()" class="btn-close">✖</button>
                 </div>
                 

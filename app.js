@@ -277,3 +277,26 @@ async function deleteCurrentClient() {
         if (result.isConfirmed) { await db.clients.delete(parseInt(id)); closeForm(); await updateList(); }
     });
 }
+// --- NEW FEATURE: TRANSFER TO PRESCRIPTION ---
+function transferToPrescription() {
+    // 1. Get data from the Main Form
+    const name = document.getElementById('name').value;
+    const star = document.getElementById('star').value;
+    const place = document.getElementById('place').value;
+    // Note: Rasi/Ubhaya are not in main form, so we leave them blank or you can add them
+    const solution = document.getElementById('currentSolution').value;
+
+    if (!name) {
+        Swal.fire({ title: 'Error', text: 'Please enter a Name first', icon: 'warning', width: '250px' });
+        return;
+    }
+
+    // 2. Open the Prescription Modal
+    showPrescriptionForm();
+
+    // 3. Fill the data automatically
+    document.getElementById('prescName').value = name;
+    document.getElementById('prescStar').value = star;
+    document.getElementById('prescPlace').value = place;
+    document.getElementById('prescBody').value = solution; // Copy the solution text!
+}
