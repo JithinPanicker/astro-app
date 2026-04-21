@@ -1,5 +1,4 @@
-// --- LICENSE SYSTEM ---
-checkLicense();
+// --- LICENSE SYSTEM (already in index but kept for safety) ---
 function checkLicense() {
     const expiry = localStorage.getItem('pratnya_license_expiry');
     const lockScreen = document.getElementById('licenseScreen');
@@ -20,7 +19,7 @@ window.activateLicense = function() {
     } catch (e) { document.getElementById('licenseError').style.display = 'block'; }
 };
 
-// --- X / TWITTER STYLE TOASTS ---
+// --- TOASTS ---
 const topToast = Swal.mixin({
     toast: true,
     position: 'top',
@@ -44,7 +43,7 @@ const warnToast = Swal.mixin({
     customClass: { popup: 'x-toast-confirm' }
 });
 
-// --- TEXTAREA UNDO / CLEAR LOGIC ---
+// --- TEXTAREA UNDO / CLEAR ---
 window.textHistory = {};
 window.clearText = (id) => {
     const el = document.getElementById(id);
@@ -67,40 +66,50 @@ window.undoText = (id) => {
     }
 };
 
-// --- DATABASE & CORE ---
+// --- DATABASE ---
 const db = new Dexie('AstroAppDB');
 db.version(4).stores({ clients: '++id, name, star, phone, location, age, dob, birthTime, profession' });
 
+// --- DOM ELEMENTS ---
 const modal = document.getElementById('clientFormModal');
 const prescModal = document.getElementById('prescriptionModal');
 const form = document.getElementById('clientForm');
 const prescForm = document.getElementById('prescriptionForm');
 const searchInput = document.getElementById('searchInput');
 
-updateList();
-
-// --- GLOBAL TEMPLATE SELECTOR HELPER ---
+// --- GLOBAL TEMPLATE SELECTOR ---
 function getSelectedTemplate() {
-    return document.getElementById('globalTemplateSelect').value; // 'ck' or 'pratnya'
+    const select = document.getElementById('globalTemplateSelect');
+    return select ? select.value : 'ck';
 }
 
 // --- MODAL FUNCTIONS ---
-function showForm() { modal.classList.remove('hidden'); document.body.style.overflow = 'hidden'; }
-function closeForm() { 
-    modal.classList.add('hidden'); document.body.style.overflow = 'auto'; 
-    form.reset(); document.getElementById('clientId').value = ""; 
+window.showForm = function() { 
+    modal.classList.remove('hidden'); 
+    document.body.style.overflow = 'hidden'; 
+};
+window.closeForm = function() { 
+    modal.classList.add('hidden'); 
+    document.body.style.overflow = 'auto'; 
+    form.reset(); 
+    document.getElementById('clientId').value = ""; 
     document.getElementById('historyList').innerHTML = ""; 
     document.getElementById('clientPrescList').innerHTML = ""; 
-}
+};
 
-function showPrescriptionForm() { prescModal.classList.remove('hidden'); document.body.style.overflow = 'hidden'; }
-function closePrescriptionForm() { 
-    prescModal.classList.add('hidden'); document.body.style.overflow = 'auto'; 
-    prescForm.reset(); document.getElementById('prescClientId').value = "";
+window.showPrescriptionForm = function() { 
+    prescModal.classList.remove('hidden'); 
+    document.body.style.overflow = 'hidden'; 
+};
+window.closePrescriptionForm = function() { 
+    prescModal.classList.add('hidden'); 
+    document.body.style.overflow = 'auto'; 
+    prescForm.reset(); 
+    document.getElementById('prescClientId').value = "";
     document.getElementById('prescHistoryList').innerHTML = "";
-}
+};
 
-// --- SAVE MAIN CLIENT ---
+// --- SAVE CLIENT ---
 form.onsubmit = async (event) => {
     event.preventDefault();
     const id = document.getElementById('clientId').value;
@@ -187,7 +196,7 @@ window.savePrescription = async () => {
     topToast.fire({ text: 'Prescription saved successfully' });
 };
 
-// --- LOAD CLIENT DETAILS ---
+// --- LOAD CLIENT ---
 window.loadClient = async (id) => {
     const client = await db.clients.get(id);
     if(!client) return;
@@ -244,7 +253,7 @@ window.loadClient = async (id) => {
     showForm();
 };
 
-// --- LOAD PRESCRIPTION DETAILS ---
+// --- LOAD PRESCRIPTION ---
 window.loadPrescription = async (id) => {
     const client = await db.clients.get(id);
     if(!client) return;
@@ -284,7 +293,7 @@ window.loadPrescription = async (id) => {
     showPrescriptionForm();
 };
 
-// --- HISTORY EDIT & DELETE LOGIC (unchanged) ---
+// --- HISTORY EDIT & DELETE ---
 window.editHist = (clientId, timestamp) => {
     const probEl = document.getElementById(`prob-text-${timestamp}`);
     const solEl = document.getElementById(`sol-text-${timestamp}`);
@@ -395,6 +404,7 @@ window.deletePrescHist = async (clientId, timestamp) => {
     });
 };
 
+// --- UPDATE LIST ---
 async function updateList() {
     const query = searchInput.value.toLowerCase();
     let clients = await db.clients.toArray();
@@ -439,7 +449,7 @@ async function updateList() {
     document.getElementById('clientList').innerHTML = html;
 }
 
-// --- FILL PRESCRIPTION TEMPLATE (uses global selector) ---
+// --- FILL PRESCRIPTION TEMPLATE ---
 function fillPrescriptionTemplate() {
     const template = getSelectedTemplate();
     const name = document.getElementById('prescName').value || "";
@@ -453,7 +463,8 @@ function fillPrescriptionTemplate() {
     if(!name && !body) return false;
 
     const suffix = template === 'ck' ? 'CK' : 'Pratnya';
-    document.getElementById(`pdfPrescName${suffix}`).innerText = name;
+    const nameSpan = document.getElementById(`pdfPrescName${suffix}`);
+    if (nameSpan) nameSpan.innerText = name;
     document.getElementById(`pdfPrescDate${suffix}`).innerText = currentDate;
     document.getElementById(`pdfPrescStar${suffix}`).innerText = star;
     document.getElementById(`pdfPrescPlace${suffix}`).innerText = place;
@@ -463,7 +474,7 @@ function fillPrescriptionTemplate() {
     return true;
 }
 
-// --- GENERATE PRESCRIPTION PDF (global selector) ---
+// --- GENERATE PRESCRIPTION PDF ---
 window.generatePrescriptionPDF = async () => {
     const template = getSelectedTemplate();
     if (!fillPrescriptionTemplate()) {
@@ -477,6 +488,7 @@ window.generatePrescriptionPDF = async () => {
         const { jsPDF } = window.jspdf;
         const elementId = template === 'ck' ? 'prescriptionTemplateCK' : 'prescriptionTemplatePratnya';
         const element = document.getElementById(elementId);
+        if (!element) throw new Error('Template not found');
         const canvas = await html2canvas(element, { scale: 2 });
         const imgData = canvas.toDataURL('image/png');
         const pdf = new jsPDF('p', 'mm', 'a4');
@@ -486,10 +498,13 @@ window.generatePrescriptionPDF = async () => {
         pdf.addImage(imgData, 'PNG', 0, 0, width, height);
         pdf.save(`${name}_Prescription.pdf`);
         topToast.fire({ text: 'Downloaded successfully!' });
-    } catch(e) { console.error(e); }
+    } catch(e) { 
+        console.error(e); 
+        topToast.fire({ text: 'PDF generation failed', background: '#E0245E' });
+    }
 };
 
-// --- SHARE PRESCRIPTION PDF (global selector) ---
+// --- SHARE PRESCRIPTION PDF ---
 window.sharePrescriptionPDF = async () => {
     const template = getSelectedTemplate();
     if (!fillPrescriptionTemplate()) {
@@ -503,6 +518,7 @@ window.sharePrescriptionPDF = async () => {
         const { jsPDF } = window.jspdf;
         const elementId = template === 'ck' ? 'prescriptionTemplateCK' : 'prescriptionTemplatePratnya';
         const element = document.getElementById(elementId);
+        if (!element) throw new Error('Template not found');
         const canvas = await html2canvas(element, { scale: 2 });
         const imgData = canvas.toDataURL('image/png');
         const pdf = new jsPDF('p', 'mm', 'a4');
@@ -530,14 +546,14 @@ window.sharePrescriptionPDF = async () => {
         }
     } catch(e) { 
         console.error(e); 
-        topToast.fire({ text: 'Sharing cancelled or failed', background: '#E0245E' }); 
+        topToast.fire({ text: e.message || 'Sharing cancelled or failed', background: '#E0245E' }); 
     }
 };
 
-// --- GENERATE CLIENT FULL REPORT PDF (global selector) ---
+// --- GENERATE CLIENT FULL REPORT PDF ---
 window.generatePDF = async () => {
     const template = getSelectedTemplate();
-    const name = document.getElementById('name').value;
+    const name = document.getElementById('name').value || 'Client';
     const star = document.getElementById('star').value;
     const dob = document.getElementById('dob').value;
     const time = document.getElementById('birthTime').value;
@@ -580,7 +596,8 @@ window.generatePDF = async () => {
     htmlContent += `</table>`;
 
     const contentId = template === 'ck' ? 'pdfContentCK' : 'pdfContentPratnya';
-    document.getElementById(contentId).innerHTML = htmlContent;
+    const contentDiv = document.getElementById(contentId);
+    if (contentDiv) contentDiv.innerHTML = htmlContent;
 
     topToast.fire({ text: 'Generating PDF...' });
     try {
@@ -590,6 +607,7 @@ window.generatePDF = async () => {
 
         const elementId = template === 'ck' ? 'pdfTemplateCK' : 'pdfTemplatePratnya';
         const element = document.getElementById(elementId);
+        if (!element) throw new Error('Template not found');
         const canvas = await html2canvas(element, { scale: 2 });
         const imgData = canvas.toDataURL('image/png');
         const height = (canvas.height * width) / canvas.width;
@@ -597,11 +615,16 @@ window.generatePDF = async () => {
 
         pdf.save(`${name}_Full_Report.pdf`);
         topToast.fire({ text: 'Downloaded successfully!' });
-    } catch (error) { topToast.fire({ text: 'PDF Failed', background: '#E0245E' }); }
+    } catch (error) { 
+        console.error(error);
+        topToast.fire({ text: 'PDF Failed', background: '#E0245E' }); 
+    }
 };
 
+// --- OTHER HELPERS ---
 searchInput.oninput = () => updateList();
-function calculateAge() {
+
+window.calculateAge = function() {
     const dobInput = document.getElementById('dob').value;
     if (!dobInput) return;
     const dob = new Date(dobInput);
@@ -609,24 +632,25 @@ function calculateAge() {
     let age = today.getFullYear() - dob.getFullYear();
     if (today.getMonth() < dob.getMonth() || (today.getMonth() === dob.getMonth() && today.getDate() < dob.getDate())) age--;
     document.getElementById('age').value = age;
-}
+};
 
-async function deleteCurrentClient() {
+window.deleteCurrentClient = async function() {
     const id = document.getElementById('clientId').value;
     if (!id) return;
     warnToast.fire({ text: 'Delete entire client? (Consults & Prescriptions)' }).then(async (result) => {
         if (result.isConfirmed) { await db.clients.delete(parseInt(id)); closeForm(); await updateList(); topToast.fire({ text: 'Deleted' }); }
     });
-}
-async function deleteCurrentPrescClient() {
+};
+
+window.deleteCurrentPrescClient = async function() {
     const id = document.getElementById('prescClientId').value;
     if (!id) return;
     warnToast.fire({ text: 'Delete entire client? (Consults & Prescriptions)' }).then(async (result) => {
         if (result.isConfirmed) { await db.clients.delete(parseInt(id)); closePrescriptionForm(); await updateList(); topToast.fire({ text: 'Deleted' }); }
     });
-}
+};
 
-function transferToPrescription() {
+window.transferToPrescription = function() {
     const id = document.getElementById('clientId').value; 
     const name = document.getElementById('name').value;
     const phone = document.getElementById('phone').value;
@@ -643,4 +667,7 @@ function transferToPrescription() {
     document.getElementById('prescStar').value = star;
     document.getElementById('prescPlace').value = place;
     document.getElementById('prescBody').value = solution;
-}
+};
+
+// Initial load
+updateList();
