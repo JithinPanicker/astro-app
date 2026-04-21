@@ -26,7 +26,7 @@ const topToast = Swal.mixin({
     position: 'top',
     showConfirmButton: false,
     timer: 2500,
-    background: '#1DA1F2', // Twitter Blue
+    background: '#1DA1F2',
     color: '#fff',
     customClass: { popup: 'x-toast' }
 });
@@ -36,10 +36,10 @@ const warnToast = Swal.mixin({
     position: 'top',
     showConfirmButton: true,
     showCancelButton: true,
-    confirmButtonColor: '#E0245E', // Twitter Red
-    cancelButtonColor: '#657786',  // Twitter Gray
+    confirmButtonColor: '#E0245E',
+    cancelButtonColor: '#657786',
     confirmButtonText: 'Confirm',
-    background: '#15202B', // Twitter Dark
+    background: '#15202B',
     color: '#fff',
     customClass: { popup: 'x-toast-confirm' }
 });
@@ -78,6 +78,11 @@ const prescForm = document.getElementById('prescriptionForm');
 const searchInput = document.getElementById('searchInput');
 
 updateList();
+
+// --- GLOBAL TEMPLATE SELECTOR HELPER ---
+function getSelectedTemplate() {
+    return document.getElementById('globalTemplateSelect').value; // 'ck' or 'pratnya'
+}
 
 // --- MODAL FUNCTIONS ---
 function showForm() { modal.classList.remove('hidden'); document.body.style.overflow = 'hidden'; }
@@ -279,7 +284,7 @@ window.loadPrescription = async (id) => {
     showPrescriptionForm();
 };
 
-// --- HISTORY EDIT & DELETE LOGIC ---
+// --- HISTORY EDIT & DELETE LOGIC (unchanged) ---
 window.editHist = (clientId, timestamp) => {
     const probEl = document.getElementById(`prob-text-${timestamp}`);
     const solEl = document.getElementById(`sol-text-${timestamp}`);
@@ -402,7 +407,6 @@ async function updateList() {
         const hasPresc = client.prescriptions && client.prescriptions.length > 0;
         const noHistory = !hasConsults && !hasPresc;
 
-        // Generate WA button with Font Awesome icon if phone exists
         let waBtn = '';
         if (client.phone) {
             let waPhone = client.phone.replace(/\D/g, '');
@@ -435,35 +439,44 @@ async function updateList() {
     document.getElementById('clientList').innerHTML = html;
 }
 
-// Helper to fill the PDF template
+// --- FILL PRESCRIPTION TEMPLATE (uses global selector) ---
 function fillPrescriptionTemplate() {
+    const template = getSelectedTemplate();
     const name = document.getElementById('prescName').value || "";
     const star = document.getElementById('prescStar').value || "";
     const place = document.getElementById('prescPlace').value || "";
     const rasi = document.getElementById('prescRasi').value || "";
     const udhaya = document.getElementById('prescUdhaya').value || "";
     const body = document.getElementById('prescBody').value || "";
+    const currentDate = new Date().toLocaleDateString('en-IN');
 
     if(!name && !body) return false;
 
-    document.getElementById('pdfPrescName').innerText = name;
-    document.getElementById('pdfPrescDate').innerText = new Date().toLocaleDateString('en-IN');
-    document.getElementById('pdfPrescStar').innerText = star;
-    document.getElementById('pdfPrescPlace').innerText = place;
-    document.getElementById('pdfPrescRasi').innerText = rasi;
-    document.getElementById('pdfPrescUdhaya').innerText = udhaya;
-    document.getElementById('pdfPrescBody').innerText = body;
+    const suffix = template === 'ck' ? 'CK' : 'Pratnya';
+    document.getElementById(`pdfPrescName${suffix}`).innerText = name;
+    document.getElementById(`pdfPrescDate${suffix}`).innerText = currentDate;
+    document.getElementById(`pdfPrescStar${suffix}`).innerText = star;
+    document.getElementById(`pdfPrescPlace${suffix}`).innerText = place;
+    document.getElementById(`pdfPrescRasi${suffix}`).innerText = rasi;
+    document.getElementById(`pdfPrescUdhaya${suffix}`).innerText = udhaya;
+    document.getElementById(`pdfPrescBody${suffix}`).innerText = body;
     return true;
 }
 
+// --- GENERATE PRESCRIPTION PDF (global selector) ---
 window.generatePrescriptionPDF = async () => {
-    if (!fillPrescriptionTemplate()) { topToast.fire({ text: 'Form is empty!', background: '#E0245E' }); return; }
+    const template = getSelectedTemplate();
+    if (!fillPrescriptionTemplate()) {
+        topToast.fire({ text: 'Form is empty!', background: '#E0245E' });
+        return;
+    }
     const name = document.getElementById('prescName').value || "Client";
 
     topToast.fire({ text: 'Generating PDF...' });
     try {
         const { jsPDF } = window.jspdf;
-        const element = document.getElementById('prescriptionTemplate');
+        const elementId = template === 'ck' ? 'prescriptionTemplateCK' : 'prescriptionTemplatePratnya';
+        const element = document.getElementById(elementId);
         const canvas = await html2canvas(element, { scale: 2 });
         const imgData = canvas.toDataURL('image/png');
         const pdf = new jsPDF('p', 'mm', 'a4');
@@ -476,15 +489,20 @@ window.generatePrescriptionPDF = async () => {
     } catch(e) { console.error(e); }
 };
 
-// --- SHARE WA BUTTON LOGIC ---
+// --- SHARE PRESCRIPTION PDF (global selector) ---
 window.sharePrescriptionPDF = async () => {
-    if (!fillPrescriptionTemplate()) { topToast.fire({ text: 'Form is empty!', background: '#E0245E' }); return; }
+    const template = getSelectedTemplate();
+    if (!fillPrescriptionTemplate()) {
+        topToast.fire({ text: 'Form is empty!', background: '#E0245E' });
+        return;
+    }
     const name = document.getElementById('prescName').value || "Client";
 
     topToast.fire({ text: 'Preparing file for sharing...' });
     try {
         const { jsPDF } = window.jspdf;
-        const element = document.getElementById('prescriptionTemplate');
+        const elementId = template === 'ck' ? 'prescriptionTemplateCK' : 'prescriptionTemplatePratnya';
+        const element = document.getElementById(elementId);
         const canvas = await html2canvas(element, { scale: 2 });
         const imgData = canvas.toDataURL('image/png');
         const pdf = new jsPDF('p', 'mm', 'a4');
@@ -493,7 +511,6 @@ window.sharePrescriptionPDF = async () => {
         
         pdf.addImage(imgData, 'PNG', 0, 0, width, height);
         
-        // Convert to a File object for sharing
         const pdfBlob = pdf.output('blob');
         const file = new File([pdfBlob], `${name}_Prescription.pdf`, { type: 'application/pdf' });
 
@@ -505,7 +522,6 @@ window.sharePrescriptionPDF = async () => {
             });
             topToast.fire({ text: 'Opened share menu!' });
         } else {
-            // Fallback for desktop browsers that don't support file sharing
             Swal.fire({
                 title: 'Unsupported Browser',
                 text: 'Your device/browser does not support direct file sharing. Please click "PDF" to download it, then attach it in WhatsApp manually.',
@@ -518,8 +534,9 @@ window.sharePrescriptionPDF = async () => {
     }
 };
 
-
+// --- GENERATE CLIENT FULL REPORT PDF (global selector) ---
 window.generatePDF = async () => {
+    const template = getSelectedTemplate();
     const name = document.getElementById('name').value;
     const star = document.getElementById('star').value;
     const dob = document.getElementById('dob').value;
@@ -561,7 +578,9 @@ window.generatePDF = async () => {
         }
     }
     htmlContent += `</table>`;
-    document.getElementById('pdfContent').innerHTML = htmlContent;
+
+    const contentId = template === 'ck' ? 'pdfContentCK' : 'pdfContentPratnya';
+    document.getElementById(contentId).innerHTML = htmlContent;
 
     topToast.fire({ text: 'Generating PDF...' });
     try {
@@ -569,11 +588,12 @@ window.generatePDF = async () => {
         const pdf = new jsPDF('p', 'mm', 'a4');
         const width = pdf.internal.pageSize.getWidth();
 
-        const element1 = document.getElementById('pdfTemplate');
-        const canvas1 = await html2canvas(element1, { scale: 2 });
-        const imgData1 = canvas1.toDataURL('image/png');
-        const height1 = (canvas1.height * width) / canvas1.width;
-        pdf.addImage(imgData1, 'PNG', 0, 0, width, height1);
+        const elementId = template === 'ck' ? 'pdfTemplateCK' : 'pdfTemplatePratnya';
+        const element = document.getElementById(elementId);
+        const canvas = await html2canvas(element, { scale: 2 });
+        const imgData = canvas.toDataURL('image/png');
+        const height = (canvas.height * width) / canvas.width;
+        pdf.addImage(imgData, 'PNG', 0, 0, width, height);
 
         pdf.save(`${name}_Full_Report.pdf`);
         topToast.fire({ text: 'Downloaded successfully!' });
