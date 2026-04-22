@@ -1,4 +1,5 @@
-// --- LICENSE SYSTEM (already in index but kept for safety) ---
+// --- LICENSE SYSTEM ---
+checkLicense();
 function checkLicense() {
     const expiry = localStorage.getItem('pratnya_license_expiry');
     const lockScreen = document.getElementById('licenseScreen');
@@ -19,29 +20,35 @@ window.activateLicense = function() {
     } catch (e) { document.getElementById('licenseError').style.display = 'block'; }
 };
 
-// --- TOASTS ---
-const topToast = Swal.mixin({
-    toast: true,
-    position: 'top',
-    showConfirmButton: false,
-    timer: 2500,
-    background: '#1DA1F2',
-    color: '#fff',
-    customClass: { popup: 'x-toast' }
-});
-
-const warnToast = Swal.mixin({
-    toast: true,
-    position: 'top',
-    showConfirmButton: true,
-    showCancelButton: true,
-    confirmButtonColor: '#E0245E',
-    cancelButtonColor: '#657786',
-    confirmButtonText: 'Confirm',
-    background: '#15202B',
-    color: '#fff',
-    customClass: { popup: 'x-toast-confirm' }
-});
+// --- TOASTS (with fallback) ---
+let topToast, warnToast;
+if (typeof Swal !== 'undefined') {
+    topToast = Swal.mixin({
+        toast: true,
+        position: 'top',
+        showConfirmButton: false,
+        timer: 2500,
+        background: '#1DA1F2',
+        color: '#fff',
+        customClass: { popup: 'x-toast' }
+    });
+    warnToast = Swal.mixin({
+        toast: true,
+        position: 'top',
+        showConfirmButton: true,
+        showCancelButton: true,
+        confirmButtonColor: '#E0245E',
+        cancelButtonColor: '#657786',
+        confirmButtonText: 'Confirm',
+        background: '#15202B',
+        color: '#fff',
+        customClass: { popup: 'x-toast-confirm' }
+    });
+} else {
+    console.error('SweetAlert2 not loaded. Using alert fallback.');
+    topToast = { fire: (opts) => alert(opts.text) };
+    warnToast = { fire: (opts) => confirm(opts.text) };
+}
 
 // --- TEXTAREA UNDO / CLEAR ---
 window.textHistory = {};
@@ -70,46 +77,31 @@ window.undoText = (id) => {
 const db = new Dexie('AstroAppDB');
 db.version(4).stores({ clients: '++id, name, star, phone, location, age, dob, birthTime, profession' });
 
-// --- DOM ELEMENTS ---
 const modal = document.getElementById('clientFormModal');
 const prescModal = document.getElementById('prescriptionModal');
 const form = document.getElementById('clientForm');
 const prescForm = document.getElementById('prescriptionForm');
 const searchInput = document.getElementById('searchInput');
 
-// --- GLOBAL TEMPLATE SELECTOR ---
-function getSelectedTemplate() {
-    const select = document.getElementById('globalTemplateSelect');
-    return select ? select.value : 'ck';
-}
+updateList();
 
 // --- MODAL FUNCTIONS ---
-window.showForm = function() { 
-    modal.classList.remove('hidden'); 
-    document.body.style.overflow = 'hidden'; 
-};
-window.closeForm = function() { 
-    modal.classList.add('hidden'); 
-    document.body.style.overflow = 'auto'; 
-    form.reset(); 
-    document.getElementById('clientId').value = ""; 
+function showForm() { modal.classList.remove('hidden'); document.body.style.overflow = 'hidden'; }
+function closeForm() { 
+    modal.classList.add('hidden'); document.body.style.overflow = 'auto'; 
+    form.reset(); document.getElementById('clientId').value = ""; 
     document.getElementById('historyList').innerHTML = ""; 
     document.getElementById('clientPrescList').innerHTML = ""; 
-};
+}
 
-window.showPrescriptionForm = function() { 
-    prescModal.classList.remove('hidden'); 
-    document.body.style.overflow = 'hidden'; 
-};
-window.closePrescriptionForm = function() { 
-    prescModal.classList.add('hidden'); 
-    document.body.style.overflow = 'auto'; 
-    prescForm.reset(); 
-    document.getElementById('prescClientId').value = "";
+function showPrescriptionForm() { prescModal.classList.remove('hidden'); document.body.style.overflow = 'hidden'; }
+function closePrescriptionForm() { 
+    prescModal.classList.add('hidden'); document.body.style.overflow = 'auto'; 
+    prescForm.reset(); document.getElementById('prescClientId').value = "";
     document.getElementById('prescHistoryList').innerHTML = "";
-};
+}
 
-// --- SAVE CLIENT ---
+// --- SAVE MAIN CLIENT ---
 form.onsubmit = async (event) => {
     event.preventDefault();
     const id = document.getElementById('clientId').value;
@@ -196,7 +188,7 @@ window.savePrescription = async () => {
     topToast.fire({ text: 'Prescription saved successfully' });
 };
 
-// --- LOAD CLIENT ---
+// --- LOAD CLIENT DETAILS ---
 window.loadClient = async (id) => {
     const client = await db.clients.get(id);
     if(!client) return;
@@ -253,7 +245,7 @@ window.loadClient = async (id) => {
     showForm();
 };
 
-// --- LOAD PRESCRIPTION ---
+// --- LOAD PRESCRIPTION DETAILS ---
 window.loadPrescription = async (id) => {
     const client = await db.clients.get(id);
     if(!client) return;
@@ -293,7 +285,7 @@ window.loadPrescription = async (id) => {
     showPrescriptionForm();
 };
 
-// --- HISTORY EDIT & DELETE ---
+// --- HISTORY EDIT & DELETE LOGIC ---
 window.editHist = (clientId, timestamp) => {
     const probEl = document.getElementById(`prob-text-${timestamp}`);
     const solEl = document.getElementById(`sol-text-${timestamp}`);
@@ -449,87 +441,235 @@ async function updateList() {
     document.getElementById('clientList').innerHTML = html;
 }
 
-// --- FILL PRESCRIPTION TEMPLATE ---
-function fillPrescriptionTemplate() {
-    const template = getSelectedTemplate();
-    const name = document.getElementById('prescName').value || "";
-    const star = document.getElementById('prescStar').value || "";
-    const place = document.getElementById('prescPlace').value || "";
-    const rasi = document.getElementById('prescRasi').value || "";
-    const udhaya = document.getElementById('prescUdhaya').value || "";
-    const body = document.getElementById('prescBody').value || "";
-    const currentDate = new Date().toLocaleDateString('en-IN');
-
-    if(!name && !body) return false;
-
-    const suffix = template === 'ck' ? 'CK' : 'Pratnya';
-    const nameSpan = document.getElementById(`pdfPrescName${suffix}`);
-    if (nameSpan) nameSpan.innerText = name;
-    document.getElementById(`pdfPrescDate${suffix}`).innerText = currentDate;
-    document.getElementById(`pdfPrescStar${suffix}`).innerText = star;
-    document.getElementById(`pdfPrescPlace${suffix}`).innerText = place;
-    document.getElementById(`pdfPrescRasi${suffix}`).innerText = rasi;
-    document.getElementById(`pdfPrescUdhaya${suffix}`).innerText = udhaya;
-    document.getElementById(`pdfPrescBody${suffix}`).innerText = body;
-    return true;
+// --- LETTERHEAD SELECTION DIALOG ---
+function askLetterheadChoice() {
+    console.log('askLetterheadChoice called');
+    if (typeof Swal === 'undefined') {
+        console.warn('Swal not defined, using confirm fallback');
+        const choice = confirm('Choose letterhead:\nOK = CK Saji Panicker\nCancel = Pratnya (Logo)');
+        if (choice) return Promise.resolve('ck');
+        else return Promise.resolve('pratnya');
+    }
+    
+    return Swal.fire({
+        title: 'Select Letterhead',
+        text: 'Choose the header style for the PDF',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'CK Saji Panicker',
+        cancelButtonText: 'Pratnya (Logo)',
+        reverseButtons: true,
+        focusConfirm: false,
+        focusCancel: false,
+        allowOutsideClick: false
+    }).then((result) => {
+        console.log('Swal result:', result);
+        if (result.isConfirmed) {
+            return 'ck';
+        } else if (result.dismiss === Swal.DismissReason.cancel) {
+            return 'pratnya';
+        }
+        return null;
+    });
 }
 
-// --- GENERATE PRESCRIPTION PDF ---
+// --- MULTI-PAGE PDF UTILITIES ---
+function addHeader(pdf, type = 'ck') {
+    // Header dimensions and positions
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const margin = 15;
+    
+    if (type === 'ck') {
+        // CK Saji Panicker header
+        pdf.setFontSize(14);
+        pdf.setTextColor(46, 125, 50); // #2E7D32
+        pdf.setFont('Georgia', 'italic');
+        pdf.text('Astrologer', margin, 25);
+        
+        pdf.setFontSize(22);
+        pdf.setFont('Georgia', 'bold');
+        pdf.text('C.K. Saji Panicker', margin, 35);
+        
+        pdf.setFontSize(11);
+        pdf.setFont('Georgia', 'italic');
+        pdf.text('Chathangottupuram, Kalarikkal', margin, 45);
+        pdf.text('Wandoor-Malappuram', margin, 52);
+        pdf.text('Kerala : 679 328', margin, 59);
+        
+        // Right side contact
+        pdf.setFontSize(12);
+        pdf.setFont('Georgia', 'italic');
+        pdf.text('Consultation', pageWidth - margin - 40, 25, { align: 'right' });
+        pdf.setFontSize(12);
+        pdf.text('Online: 9207 773 880', pageWidth - margin - 40, 35, { align: 'right' });
+        pdf.text('Office: 7034 600 880', pageWidth - margin - 40, 42, { align: 'right' });
+        
+        // Divider line
+        pdf.setDrawColor(46, 125, 50);
+        pdf.setLineWidth(0.5);
+        pdf.line(margin, 65, pageWidth - margin, 65);
+        
+        return 75; // Y position after header
+    } else {
+        // Pratnya logo header
+        // Since we can't load external image easily in jsPDF without base64, we'll use text logo for simplicity
+        // Alternatively, we can embed logo.png as base64 - but for reliability we'll use stylized text
+        pdf.setFontSize(28);
+        pdf.setTextColor(46, 125, 50);
+        pdf.setFont('Georgia', 'bold');
+        pdf.text('PRATNYA', pageWidth / 2, 35, { align: 'center' });
+        pdf.setFontSize(12);
+        pdf.setFont('Georgia', 'italic');
+        pdf.text('Astro Manager', pageWidth / 2, 45, { align: 'center' });
+        
+        // Divider line
+        pdf.setDrawColor(46, 125, 50);
+        pdf.setLineWidth(0.5);
+        pdf.line(margin, 55, pageWidth - margin, 55);
+        
+        return 65; // Y position after header
+    }
+}
+
+function addFooter(pdf) {
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+    const margin = 15;
+    
+    pdf.setDrawColor(46, 125, 50);
+    pdf.setLineWidth(0.5);
+    pdf.line(margin, pageHeight - 30, pageWidth - margin, pageHeight - 30);
+    
+    pdf.setFontSize(18);
+    pdf.setTextColor(46, 125, 50);
+    pdf.setFont('Brush Script MT', 'cursive');
+    pdf.text('Fix your appointment through the call', pageWidth / 2, pageHeight - 18, { align: 'center' });
+    
+    pdf.setFontSize(12);
+    pdf.setFont('Arial', 'bold');
+    pdf.text('www.pratnya.in', pageWidth / 2, pageHeight - 8, { align: 'center' });
+}
+
+function addWatermark(pdf) {
+    // Simple watermark - we can skip for performance
+}
+
+// --- PRESCRIPTION PDF GENERATION (Multi-page) ---
+function generatePrescriptionPDFContent(pdf, data, type) {
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+    const margin = 15;
+    
+    let y = addHeader(pdf, type);
+    
+    // Client details
+    pdf.setFontSize(12);
+    pdf.setTextColor(0, 0, 0);
+    pdf.setFont('Arial', 'normal');
+    
+    const col1X = margin;
+    const col2X = pageWidth / 2 + 10;
+    
+    pdf.text(`Name: ${data.name}`, col1X, y);
+    pdf.text(`Date: ${data.date}`, col2X, y);
+    y += 8;
+    pdf.text(`Star: ${data.star}`, col1X, y);
+    pdf.text(`Place: ${data.place}`, col2X, y);
+    y += 8;
+    pdf.text(`Rasi: ${data.rasi}`, col1X, y);
+    pdf.text(`Udhaya Rasi: ${data.udhaya}`, col2X, y);
+    y += 15;
+    
+    // Prescription body
+    pdf.setFontSize(12);
+    pdf.setFont('Georgia', 'normal');
+    
+    const textLines = pdf.splitTextToSize(data.body, pageWidth - 2 * margin);
+    
+    // Calculate available height per page (accounting for footer)
+    const footerHeight = 35;
+    const maxY = pageHeight - footerHeight;
+    
+    for (let i = 0; i < textLines.length; i++) {
+        if (y > maxY) {
+            addFooter(pdf);
+            pdf.addPage();
+            y = addHeader(pdf, type);
+        }
+        pdf.text(textLines[i], margin, y);
+        y += 7; // line height
+    }
+    
+    // Add footer on last page
+    addFooter(pdf);
+}
+
 window.generatePrescriptionPDF = async () => {
-    const template = getSelectedTemplate();
-    if (!fillPrescriptionTemplate()) {
+    const name = document.getElementById('prescName').value || "";
+    const body = document.getElementById('prescBody').value || "";
+    if (!name && !body) {
         topToast.fire({ text: 'Form is empty!', background: '#E0245E' });
         return;
     }
-    const name = document.getElementById('prescName').value || "Client";
-
+    
+    const choice = await askLetterheadChoice();
+    if (!choice) return;
+    
     topToast.fire({ text: 'Generating PDF...' });
+    
+    const data = {
+        name: name,
+        date: new Date().toLocaleDateString('en-IN'),
+        star: document.getElementById('prescStar').value || "",
+        place: document.getElementById('prescPlace').value || "",
+        rasi: document.getElementById('prescRasi').value || "",
+        udhaya: document.getElementById('prescUdhaya').value || "",
+        body: body
+    };
+    
     try {
         const { jsPDF } = window.jspdf;
-        const elementId = template === 'ck' ? 'prescriptionTemplateCK' : 'prescriptionTemplatePratnya';
-        const element = document.getElementById(elementId);
-        if (!element) throw new Error('Template not found');
-        const canvas = await html2canvas(element, { scale: 2 });
-        const imgData = canvas.toDataURL('image/png');
         const pdf = new jsPDF('p', 'mm', 'a4');
-        const width = pdf.internal.pageSize.getWidth();
-        const height = (canvas.height * width) / canvas.width;
-        
-        pdf.addImage(imgData, 'PNG', 0, 0, width, height);
+        generatePrescriptionPDFContent(pdf, data, choice);
         pdf.save(`${name}_Prescription.pdf`);
         topToast.fire({ text: 'Downloaded successfully!' });
-    } catch(e) { 
-        console.error(e); 
+    } catch(e) {
+        console.error(e);
         topToast.fire({ text: 'PDF generation failed', background: '#E0245E' });
     }
 };
 
-// --- SHARE PRESCRIPTION PDF ---
 window.sharePrescriptionPDF = async () => {
-    const template = getSelectedTemplate();
-    if (!fillPrescriptionTemplate()) {
+    const name = document.getElementById('prescName').value || "";
+    const body = document.getElementById('prescBody').value || "";
+    if (!name && !body) {
         topToast.fire({ text: 'Form is empty!', background: '#E0245E' });
         return;
     }
-    const name = document.getElementById('prescName').value || "Client";
-
+    
+    const choice = await askLetterheadChoice();
+    if (!choice) return;
+    
     topToast.fire({ text: 'Preparing file for sharing...' });
+    
+    const data = {
+        name: name,
+        date: new Date().toLocaleDateString('en-IN'),
+        star: document.getElementById('prescStar').value || "",
+        place: document.getElementById('prescPlace').value || "",
+        rasi: document.getElementById('prescRasi').value || "",
+        udhaya: document.getElementById('prescUdhaya').value || "",
+        body: body
+    };
+    
     try {
         const { jsPDF } = window.jspdf;
-        const elementId = template === 'ck' ? 'prescriptionTemplateCK' : 'prescriptionTemplatePratnya';
-        const element = document.getElementById(elementId);
-        if (!element) throw new Error('Template not found');
-        const canvas = await html2canvas(element, { scale: 2 });
-        const imgData = canvas.toDataURL('image/png');
         const pdf = new jsPDF('p', 'mm', 'a4');
-        const width = pdf.internal.pageSize.getWidth();
-        const height = (canvas.height * width) / canvas.width;
-        
-        pdf.addImage(imgData, 'PNG', 0, 0, width, height);
+        generatePrescriptionPDFContent(pdf, data, choice);
         
         const pdfBlob = pdf.output('blob');
         const file = new File([pdfBlob], `${name}_Prescription.pdf`, { type: 'application/pdf' });
-
+        
         if (navigator.canShare && navigator.canShare({ files: [file] })) {
             await navigator.share({
                 files: [file],
@@ -544,87 +684,103 @@ window.sharePrescriptionPDF = async () => {
                 icon: 'info'
             });
         }
-    } catch(e) { 
-        console.error(e); 
-        topToast.fire({ text: e.message || 'Sharing cancelled or failed', background: '#E0245E' }); 
+    } catch(e) {
+        console.error(e);
+        topToast.fire({ text: 'Sharing cancelled or failed', background: '#E0245E' });
     }
 };
 
-// --- GENERATE CLIENT FULL REPORT PDF ---
+// --- CLIENT CONSULTATION PDF (Multi-page with autoTable) ---
 window.generatePDF = async () => {
-    const template = getSelectedTemplate();
-    const name = document.getElementById('name').value || 'Client';
+    const name = document.getElementById('name').value;
     const star = document.getElementById('star').value;
     const dob = document.getElementById('dob').value;
     const time = document.getElementById('birthTime').value;
-
+    
     let displayTime = time;
-    if(time) {
+    if (time) {
         const [h, m] = time.split(':');
         const hour = parseInt(h);
         displayTime = `${hour % 12 || 12}:${m} ${hour >= 12 ? 'PM' : 'AM'}`;
     }
-
-    let htmlContent = `
-        <table style="width: 100%; margin-bottom: 20px; font-size: 14px;">
-            <tr><td><strong>Name:</strong> ${name}</td><td><strong>Star:</strong> ${star}</td></tr>
-            <tr><td><strong>DOB:</strong> ${dob}</td><td><strong>Time:</strong> ${displayTime}</td></tr>
-        </table>
-        <h3>Consultation History</h3>
-        <table style="width: 100%; border-collapse: collapse; border: 1px solid #ddd;">
-            <tr style="background-color: #f2f2f2;">
-                <th style="border: 1px solid #ddd; padding: 8px;">Date</th>
-                <th style="border: 1px solid #ddd; padding: 8px;">Details</th>
-            </tr>`;
-
+    
+    const choice = await askLetterheadChoice();
+    if (!choice) return;
+    
     const id = document.getElementById('clientId').value;
-    if(id) {
-        const client = await db.clients.get(parseInt(id));
-        if(client && client.consultations) {
-            client.consultations.forEach(c => {
-                htmlContent += `
-                    <tr>
-                        <td style="border: 1px solid #ddd; padding: 8px; width: 25%; vertical-align: top;">${c.date}</td>
-                        <td style="border: 1px solid #ddd; padding: 8px;">
-                            <strong>Problem:</strong><br>${c.problem || '-'}<br><br>
-                            <strong style="color: #2E7D32;">Solution:</strong><br>${c.solution || '-'}
-                        </td>
-                    </tr>`;
-            });
-        }
-    }
-    htmlContent += `</table>`;
-
-    const contentId = template === 'ck' ? 'pdfContentCK' : 'pdfContentPratnya';
-    const contentDiv = document.getElementById(contentId);
-    if (contentDiv) contentDiv.innerHTML = htmlContent;
-
+    let client;
+    if (id) client = await db.clients.get(parseInt(id));
+    
     topToast.fire({ text: 'Generating PDF...' });
+    
     try {
         const { jsPDF } = window.jspdf;
         const pdf = new jsPDF('p', 'mm', 'a4');
-        const width = pdf.internal.pageSize.getWidth();
-
-        const elementId = template === 'ck' ? 'pdfTemplateCK' : 'pdfTemplatePratnya';
-        const element = document.getElementById(elementId);
-        if (!element) throw new Error('Template not found');
-        const canvas = await html2canvas(element, { scale: 2 });
-        const imgData = canvas.toDataURL('image/png');
-        const height = (canvas.height * width) / canvas.width;
-        pdf.addImage(imgData, 'PNG', 0, 0, width, height);
-
+        const pageWidth = pdf.internal.pageSize.getWidth();
+        const pageHeight = pdf.internal.pageSize.getHeight();
+        const margin = 15;
+        
+        let y = addHeader(pdf, choice);
+        
+        // Client details
+        pdf.setFontSize(12);
+        pdf.setTextColor(0, 0, 0);
+        pdf.setFont('Arial', 'normal');
+        
+        pdf.text(`Name: ${name}`, margin, y);
+        pdf.text(`Star: ${star}`, pageWidth / 2 + 10, y);
+        y += 8;
+        pdf.text(`DOB: ${dob}`, margin, y);
+        pdf.text(`Time: ${displayTime}`, pageWidth / 2 + 10, y);
+        y += 15;
+        
+        // Prepare table data
+        const tableData = [];
+        if (client && client.consultations) {
+            client.consultations.forEach(c => {
+                tableData.push([
+                    c.date,
+                    `Problem:\n${c.problem || '-'}\n\nSolution:\n${c.solution || '-'}`
+                ]);
+            });
+        }
+        
+        if (tableData.length > 0) {
+            pdf.autoTable({
+                startY: y,
+                head: [['Date', 'Details']],
+                body: tableData,
+                margin: { left: margin, right: margin },
+                styles: { fontSize: 10, cellPadding: 4 },
+                columnStyles: {
+                    0: { cellWidth: 40 },
+                    1: { cellWidth: 'auto' }
+                },
+                didDrawPage: (data) => {
+                    // Add header and footer on each new page
+                    if (data.pageNumber > 1) {
+                        addHeader(pdf, choice);
+                    }
+                    addFooter(pdf);
+                }
+            });
+        } else {
+            pdf.text('No consultation history.', margin, y);
+            addFooter(pdf);
+        }
+        
         pdf.save(`${name}_Full_Report.pdf`);
         topToast.fire({ text: 'Downloaded successfully!' });
-    } catch (error) { 
+    } catch (error) {
         console.error(error);
-        topToast.fire({ text: 'PDF Failed', background: '#E0245E' }); 
+        topToast.fire({ text: 'PDF Failed', background: '#E0245E' });
     }
 };
 
-// --- OTHER HELPERS ---
+// --- SEARCH & MISC ---
 searchInput.oninput = () => updateList();
 
-window.calculateAge = function() {
+function calculateAge() {
     const dobInput = document.getElementById('dob').value;
     if (!dobInput) return;
     const dob = new Date(dobInput);
@@ -632,25 +788,25 @@ window.calculateAge = function() {
     let age = today.getFullYear() - dob.getFullYear();
     if (today.getMonth() < dob.getMonth() || (today.getMonth() === dob.getMonth() && today.getDate() < dob.getDate())) age--;
     document.getElementById('age').value = age;
-};
+}
 
-window.deleteCurrentClient = async function() {
+async function deleteCurrentClient() {
     const id = document.getElementById('clientId').value;
     if (!id) return;
     warnToast.fire({ text: 'Delete entire client? (Consults & Prescriptions)' }).then(async (result) => {
         if (result.isConfirmed) { await db.clients.delete(parseInt(id)); closeForm(); await updateList(); topToast.fire({ text: 'Deleted' }); }
     });
-};
+}
 
-window.deleteCurrentPrescClient = async function() {
+async function deleteCurrentPrescClient() {
     const id = document.getElementById('prescClientId').value;
     if (!id) return;
     warnToast.fire({ text: 'Delete entire client? (Consults & Prescriptions)' }).then(async (result) => {
         if (result.isConfirmed) { await db.clients.delete(parseInt(id)); closePrescriptionForm(); await updateList(); topToast.fire({ text: 'Deleted' }); }
     });
-};
+}
 
-window.transferToPrescription = function() {
+function transferToPrescription() {
     const id = document.getElementById('clientId').value; 
     const name = document.getElementById('name').value;
     const phone = document.getElementById('phone').value;
@@ -667,7 +823,4 @@ window.transferToPrescription = function() {
     document.getElementById('prescStar').value = star;
     document.getElementById('prescPlace').value = place;
     document.getElementById('prescBody').value = solution;
-};
-
-// Initial load
-updateList();
+}

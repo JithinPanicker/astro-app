@@ -1,5 +1,4 @@
-const CACHE_NAME = "astro-manager-v44"; // MUST INCREMENT ON EVERY DEPLOY
-
+const CACHE_NAME = "astro-manager-v45"; // INCREMENTED
 const ASSETS_TO_CACHE = [
     "./",
     "./index.html",
@@ -17,7 +16,9 @@ const ASSETS_TO_CACHE = [
 self.addEventListener("install", (event) => {
     self.skipWaiting();
     event.waitUntil(
-        caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS_TO_CACHE))
+        caches.open(CACHE_NAME).then((cache) => {
+            return cache.addAll(ASSETS_TO_CACHE);
+        })
     );
 });
 
@@ -26,7 +27,9 @@ self.addEventListener("activate", (event) => {
         caches.keys().then((cacheNames) => {
             return Promise.all(
                 cacheNames.map((cache) => {
-                    if (cache !== CACHE_NAME) return caches.delete(cache);
+                    if (cache !== CACHE_NAME) {
+                        return caches.delete(cache);
+                    }
                 })
             );
         })
@@ -35,23 +38,10 @@ self.addEventListener("activate", (event) => {
 });
 
 self.addEventListener("fetch", (event) => {
-    const url = new URL(event.request.url);
-
-    if (event.request.mode === 'navigate') {
-        event.respondWith(
-            fetch(event.request)
-                .then(response => {
-                    const clonedResponse = response.clone();
-                    caches.open(CACHE_NAME).then(cache => cache.put(event.request, clonedResponse));
-                    return response;
-                })
-                .catch(() => caches.match(event.request))
-        );
-        return;
-    }
-
     event.respondWith(
-        caches.match(event.request).then(response => response || fetch(event.request))
+        caches.match(event.request).then((response) => {
+            return response || fetch(event.request);
+        })
     );
 });
 
