@@ -469,7 +469,7 @@ function fillPrescriptionTemplate() {
 }
 
 // ============================================================
-// PRESCRIPTION PDF GENERATION (WATERMARK, COMPACT EQUAL HEADER & FOOTER)
+// PRESCRIPTION PDF GENERATION (WATERMARK ON EVERY PAGE)
 // ============================================================
 
 async function createPrescriptionPDFBlob() {
@@ -485,19 +485,18 @@ async function createPrescriptionPDFBlob() {
 
     if (!name && !body) throw new Error('Form is empty');
 
-    // Hidden container – compact header with watermark
+    // Hidden container (NO watermark here – added per page later)
     const container = document.createElement('div');
     container.style.position = 'absolute';
     container.style.left = '-9999px';
     container.style.top = '0';
     container.style.width = '595px';
     container.style.backgroundColor = 'white';
-    container.style.padding = '18px 18px 18px 18px'; // reduced padding
+    container.style.padding = '18px 18px 18px 18px';
     container.style.boxSizing = 'border-box';
     container.style.fontFamily = "'Arial', 'Noto Sans', sans-serif";
     container.style.color = '#000';
     container.style.lineHeight = '1.3';
-    container.style.position = 'relative'; // needed for watermark absolute positioning
 
     let headerHtml = '';
     if (template === 'ck') {
@@ -540,34 +539,51 @@ async function createPrescriptionPDFBlob() {
 
     const bodyHtml = `<div style="font-size: 14px; white-space: pre-wrap; margin-bottom: 12px;">${body.replace(/\n/g, '<br>')}</div>`;
 
-    // Watermark overlay
-    const watermarkHtml = `
-        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); opacity: 0.06; z-index: 0; pointer-events: none;">
-            <img src="logo.png" style="width: 280px; height: auto;">
-        </div>
-    `;
-
-    container.innerHTML = watermarkHtml + headerHtml + fieldsHtml + bodyHtml;
+    container.innerHTML = headerHtml + fieldsHtml + bodyHtml;
     document.body.appendChild(container);
 
     try {
+        // 1. Render content
         const canvas = await html2canvas(container, { scale: 2, backgroundColor: '#ffffff' });
         const contentWidth = canvas.width;
         const contentHeight = canvas.height;
 
+        // 2. Prepare low-opacity watermark
+        const logoImg = new Image();
+        logoImg.src = 'logo.png';
+        await new Promise((resolve, reject) => {
+            logoImg.onload = resolve;
+            logoImg.onerror = reject;
+        });
+
+        const waterCanvas = document.createElement('canvas');
+        waterCanvas.width = logoImg.width;
+        waterCanvas.height = logoImg.height;
+        const waterCtx = waterCanvas.getContext('2d');
+        waterCtx.globalAlpha = 0.06;
+        waterCtx.drawImage(logoImg, 0, 0);
+        const waterDataUrl = waterCanvas.toDataURL('image/png');
+
+        // 3. PDF setup
         const { jsPDF } = window.jspdf;
         const pdf = new jsPDF('p', 'mm', 'a4');
         const pageWidth = pdf.internal.pageSize.getWidth();   // 210 mm
         const pageHeight = pdf.internal.pageSize.getHeight(); // 297 mm
-        const margin = 12; // slightly smaller consistent margin
+        const margin = 12;
 
         const pxPerMm = contentWidth / pageWidth;
-        const footerHeightMm = 22; // compact footer
+        const footerHeightMm = 22;
         const maxContentHeightMm = pageHeight - margin - footerHeightMm;
 
         const fullImageHeightMm = contentHeight / pxPerMm;
 
-        // Compact footer (only on last page)
+        // watermark dimensions (centered)
+        const watermarkWidthMm = 60; // approx
+        const watermarkHeightMm = (logoImg.height / logoImg.width) * watermarkWidthMm;
+        const waterX = (pageWidth - watermarkWidthMm) / 2;
+        const waterY = (pageHeight - watermarkHeightMm) / 2;
+
+        // Footer drawing (only on last page)
         const drawFooter = (doc) => {
             const footerY = pageHeight - footerHeightMm;
             doc.setDrawColor(46, 125, 50);
@@ -585,6 +601,11 @@ async function createPrescriptionPDFBlob() {
         let remainingHeightMm = fullImageHeightMm;
         let sourceY = 0;
         let pageNum = 1;
+        let lastPageNumber = 1; // will be set after loop
+
+        // Pre-calculate number of pages
+        const totalSlices = Math.ceil(fullImageHeightMm / maxContentHeightMm);
+        lastPageNumber = totalSlices;
 
         while (remainingHeightMm > 0) {
             const sliceHeightMm = Math.min(maxContentHeightMm, remainingHeightMm);
@@ -597,17 +618,23 @@ async function createPrescriptionPDFBlob() {
                 const ctx = sliceCanvas.getContext('2d');
                 ctx.drawImage(canvas, 0, sourceY, contentWidth, sliceHeightPx, 0, 0, contentWidth, sliceHeightPx);
                 const sliceData = sliceCanvas.toDataURL('image/png');
-                
+
                 if (pageNum > 1) pdf.addPage();
                 pdf.addImage(sliceData, 'PNG', margin, margin, pageWidth - 2 * margin, sliceHeightMm);
+
+                // Add watermark on this page (except if footer will overlap? It's fine)
+                pdf.addImage(waterDataUrl, 'PNG', waterX, waterY, watermarkWidthMm, watermarkHeightMm);
+
+                // Draw footer only if it's the last page
+                if (pageNum === lastPageNumber) {
+                    drawFooter(pdf);
+                }
             }
 
             sourceY += sliceHeightPx;
             remainingHeightMm -= sliceHeightMm;
             pageNum++;
         }
-
-        drawFooter(pdf);
 
         return pdf.output('blob');
     } finally {
@@ -660,7 +687,7 @@ window.sharePrescriptionPDF = async () => {
     }
 };
 
-// --- GENERATE CLIENT FULL REPORT PDF (unchanged, but watermark could be added later) ---
+// --- GENERATE CLIENT FULL REPORT PDF (unchanged) ---
 window.generatePDF = async () => {
     const template = getSelectedTemplate();
     const name = document.getElementById('name').value || 'Client';
