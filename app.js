@@ -468,10 +468,29 @@ function fillPrescriptionTemplate() {
     return !!(name || body);
 }
 
-// ============================================================
-// PRESCRIPTION PDF GENERATION (WATERMARK ON EVERY PAGE)
-// ============================================================
+// ==================== HELPER: HTML-ESCAPE FOR SAFE INSERTION ====================
+function htmlEscape(text) {
+    return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+}
 
+// ==================== COMMON WATERMARK DRAWING ====================
+async function createWatermarkImage() {
+    const logoImg = new Image();
+    logoImg.src = 'logo.png';
+    await new Promise((resolve, reject) => {
+        logoImg.onload = resolve;
+        logoImg.onerror = reject;
+    });
+    const waterCanvas = document.createElement('canvas');
+    waterCanvas.width = logoImg.width;
+    waterCanvas.height = logoImg.height;
+    const waterCtx = waterCanvas.getContext('2d');
+    waterCtx.globalAlpha = 0.06;
+    waterCtx.drawImage(logoImg, 0, 0);
+    return waterCanvas.toDataURL('image/png');
+}
+
+// ==================== PRESCRIPTION PDF GENERATION ====================
 async function createPrescriptionPDFBlob() {
     const template = getSelectedTemplate();
     
@@ -480,12 +499,15 @@ async function createPrescriptionPDFBlob() {
     const place = document.getElementById('prescPlace').value.trim();
     const rasi = document.getElementById('prescRasi').value.trim();
     const udhaya = document.getElementById('prescUdhaya').value.trim();
-    const body = document.getElementById('prescBody').value || '';
+    const rawBody = document.getElementById('prescBody').value || '';
     const currentDate = new Date().toLocaleDateString('en-IN');
 
-    if (!name && !body) throw new Error('Form is empty');
+    if (!name && !rawBody) throw new Error('Form is empty');
 
-    // Hidden container (NO watermark here – added per page later)
+    // Properly escape body text before inserting into HTML
+    const bodyEscaped = htmlEscape(rawBody).replace(/\n/g, '<br>');
+
+    // Hidden container
     const container = document.createElement('div');
     container.style.position = 'absolute';
     container.style.left = '-9999px';
@@ -528,62 +550,50 @@ async function createPrescriptionPDFBlob() {
 
     const fieldsHtml = `
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; font-family: Arial, sans-serif; font-size: 12px; margin-bottom: 10px;">
-            <div><strong>Name:</strong> ${name}</div>
+            <div><strong>Name:</strong> ${htmlEscape(name)}</div>
             <div><strong>Date:</strong> ${currentDate}</div>
-            <div><strong>Star:</strong> ${star || '-'}</div>
-            <div><strong>Place:</strong> ${place || '-'}</div>
-            <div><strong>Rasi:</strong> ${rasi || '-'}</div>
-            <div><strong>Udhaya Rasi:</strong> ${udhaya || '-'}</div>
+            <div><strong>Star:</strong> ${htmlEscape(star || '-')}</div>
+            <div><strong>Place:</strong> ${htmlEscape(place || '-')}</div>
+            <div><strong>Rasi:</strong> ${htmlEscape(rasi || '-')}</div>
+            <div><strong>Udhaya Rasi:</strong> ${htmlEscape(udhaya || '-')}</div>
         </div>
     `;
 
-    const bodyHtml = `<div style="font-size: 14px; white-space: pre-wrap; margin-bottom: 12px;">${body.replace(/\n/g, '<br>')}</div>`;
+    const bodyHtml = `<div style="font-size: 14px; white-space: pre-wrap; margin-bottom: 12px;">${bodyEscaped}</div>`;
 
     container.innerHTML = headerHtml + fieldsHtml + bodyHtml;
     document.body.appendChild(container);
 
     try {
-        // 1. Render content
         const canvas = await html2canvas(container, { scale: 2, backgroundColor: '#ffffff' });
         const contentWidth = canvas.width;
         const contentHeight = canvas.height;
 
-        // 2. Prepare low-opacity watermark
+        // Watermark
+        const waterDataUrl = await createWatermarkImage();
+
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF('p', 'mm', 'a4');
+        const pageWidth = pdf.internal.pageSize.getWidth();
+        const pageHeight = pdf.internal.pageSize.getHeight();
+        const margin = 12;
+
+        const pxPerMm = contentWidth / pageWidth;
+        const footerHeightMm = 22;
+        const maxContentHeightMm = pageHeight - margin - footerHeightMm;
+        const fullImageHeightMm = contentHeight / pxPerMm;
+
+        const watermarkWidthMm = 80; // larger watermark
         const logoImg = new Image();
         logoImg.src = 'logo.png';
         await new Promise((resolve, reject) => {
             logoImg.onload = resolve;
             logoImg.onerror = reject;
         });
-
-        const waterCanvas = document.createElement('canvas');
-        waterCanvas.width = logoImg.width;
-        waterCanvas.height = logoImg.height;
-        const waterCtx = waterCanvas.getContext('2d');
-        waterCtx.globalAlpha = 0.06;
-        waterCtx.drawImage(logoImg, 0, 0);
-        const waterDataUrl = waterCanvas.toDataURL('image/png');
-
-        // 3. PDF setup
-        const { jsPDF } = window.jspdf;
-        const pdf = new jsPDF('p', 'mm', 'a4');
-        const pageWidth = pdf.internal.pageSize.getWidth();   // 210 mm
-        const pageHeight = pdf.internal.pageSize.getHeight(); // 297 mm
-        const margin = 12;
-
-        const pxPerMm = contentWidth / pageWidth;
-        const footerHeightMm = 22;
-        const maxContentHeightMm = pageHeight - margin - footerHeightMm;
-
-        const fullImageHeightMm = contentHeight / pxPerMm;
-
-        // watermark dimensions (centered)
-        const watermarkWidthMm = 60; // approx
         const watermarkHeightMm = (logoImg.height / logoImg.width) * watermarkWidthMm;
         const waterX = (pageWidth - watermarkWidthMm) / 2;
         const waterY = (pageHeight - watermarkHeightMm) / 2;
 
-        // Footer drawing (only on last page)
         const drawFooter = (doc) => {
             const footerY = pageHeight - footerHeightMm;
             doc.setDrawColor(46, 125, 50);
@@ -601,11 +611,8 @@ async function createPrescriptionPDFBlob() {
         let remainingHeightMm = fullImageHeightMm;
         let sourceY = 0;
         let pageNum = 1;
-        let lastPageNumber = 1; // will be set after loop
-
-        // Pre-calculate number of pages
         const totalSlices = Math.ceil(fullImageHeightMm / maxContentHeightMm);
-        lastPageNumber = totalSlices;
+        const lastPageNumber = totalSlices;
 
         while (remainingHeightMm > 0) {
             const sliceHeightMm = Math.min(maxContentHeightMm, remainingHeightMm);
@@ -621,11 +628,8 @@ async function createPrescriptionPDFBlob() {
 
                 if (pageNum > 1) pdf.addPage();
                 pdf.addImage(sliceData, 'PNG', margin, margin, pageWidth - 2 * margin, sliceHeightMm);
-
-                // Add watermark on this page (except if footer will overlap? It's fine)
                 pdf.addImage(waterDataUrl, 'PNG', waterX, waterY, watermarkWidthMm, watermarkHeightMm);
 
-                // Draw footer only if it's the last page
                 if (pageNum === lastPageNumber) {
                     drawFooter(pdf);
                 }
@@ -687,7 +691,7 @@ window.sharePrescriptionPDF = async () => {
     }
 };
 
-// --- GENERATE CLIENT FULL REPORT PDF (unchanged) ---
+// ==================== FULL REPORT PDF (NOW USES HTML2CANVAS FOR MALAYALAM) ====================
 window.generatePDF = async () => {
     const template = getSelectedTemplate();
     const name = document.getElementById('name').value || 'Client';
@@ -710,93 +714,148 @@ window.generatePDF = async () => {
 
     topToast.fire({ text: 'Generating PDF...' });
     try {
+        // Build HTML representation
+        let html = '';
+        // Header
+        if (template === 'ck') {
+            html += `
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid #2E7D32; padding-bottom: 8px; margin-bottom: 14px;">
+                    <div style="text-align: left;">
+                        <p style="color: #2E7D32; font-family: 'Georgia', serif; font-style: italic; font-size: 12px; margin: 0 0 1px 0;">Astrologer</p>
+                        <h2 style="color: #2E7D32; font-size: 18px; font-weight: bold; margin: 0;">C.K. Saji Panicker</h2>
+                        <div style="color: #2E7D32; font-family: 'Georgia', serif; font-style: italic; font-size: 11px; line-height: 1.4; margin-top: 2px;">
+                            Chathangottupuram, Kalarikkal<br>
+                            Wandoor-Malappuram<br>
+                            Kerala : 679 328
+                        </div>
+                    </div>
+                    <div style="text-align: right;">
+                        <p style="color: #2E7D32; font-family: 'Georgia', serif; font-style: italic; font-size: 12px; margin: 0 0 1px 0;">Consultation</p>
+                        <p style="color: #2E7D32; font-size: 11px; margin: 1px 0;">Online: <strong style="color: #2E7D32; font-size: 12px; font-style: italic;">9207 773 880</strong></p>
+                        <p style="color: #2E7D32; font-size: 11px; margin: 1px 0;">Office: <strong style="color: #2E7D32; font-size: 12px; font-style: italic;">7034 600 880</strong></p>
+                    </div>
+                </div>
+            `;
+        } else {
+            html += `
+                <div style="display: flex; justify-content: center; border-bottom: 1px solid #2E7D32; padding-bottom: 8px; margin-bottom: 14px;">
+                    <img src="logo.png" style="height: 35px; width: auto;">
+                </div>
+            `;
+        }
+        // Client info
+        html += `
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; font-family: Arial, sans-serif; font-size: 12px; margin-bottom: 10px;">
+                <div><strong>Name:</strong> ${htmlEscape(name)}</div>
+                <div><strong>Star:</strong> ${htmlEscape(star || '-')}</div>
+                <div><strong>DOB:</strong> ${dob}</div>
+                <div><strong>Time:</strong> ${displayTime}</div>
+            </div>
+            <h3 style="margin: 8px 0 4px; font-size: 14px; font-weight: bold;">Consultation History</h3>
+        `;
+        if (consults.length === 0) {
+            html += '<p style="color: #888; text-align: center; font-size: 13px;">No previous consultations.</p>';
+        } else {
+            consults.forEach(c => {
+                html += `
+                    <div style="border: 1px solid #ddd; padding: 8px; margin-bottom: 6px; font-size: 12px;">
+                        <div style="font-weight: bold;">${c.date}</div>
+                        <div style="margin-bottom: 4px;"><strong>Problem:</strong><br>${htmlEscape(c.problem || '-').replace(/\n/g, '<br>')}</div>
+                        <div><strong>Solution:</strong><br>${htmlEscape(c.solution || '-').replace(/\n/g, '<br>')}</div>
+                    </div>
+                `;
+            });
+        }
+
+        const container = document.createElement('div');
+        container.style.position = 'absolute';
+        container.style.left = '-9999px';
+        container.style.top = '0';
+        container.style.width = '595px';
+        container.style.backgroundColor = 'white';
+        container.style.padding = '18px';
+        container.style.boxSizing = 'border-box';
+        container.style.fontFamily = "'Arial', 'Noto Sans', sans-serif";
+        container.style.color = '#000';
+        container.style.lineHeight = '1.3';
+        container.innerHTML = html;
+        document.body.appendChild(container);
+
+        const canvas = await html2canvas(container, { scale: 2, backgroundColor: '#ffffff' });
+        document.body.removeChild(container);
+        const contentWidth = canvas.width;
+        const contentHeight = canvas.height;
+
+        // Watermark
+        const waterDataUrl = await createWatermarkImage();
+
         const { jsPDF } = window.jspdf;
         const pdf = new jsPDF('p', 'mm', 'a4');
         const pageWidth = pdf.internal.pageSize.getWidth();
         const pageHeight = pdf.internal.pageSize.getHeight();
-        const margin = 15;
+        const margin = 12;
 
-        const drawHeader = (doc, templateType) => {
-            doc.setTextColor(46, 125, 50);
-            if (templateType === 'ck') {
-                doc.setFontSize(14);
-                doc.setFont('times', 'italic');
-                doc.text('Astrologer', margin, margin + 5);
-                doc.setFontSize(22);
-                doc.setFont('times', 'bold');
-                doc.text('C.K. Saji Panicker', margin, margin + 13);
-                doc.setFontSize(12);
-                doc.setFont('times', 'italic');
-                doc.text('Chathangottupuram, Kalarikkal', margin, margin + 20);
-                doc.text('Wandoor-Malappuram', margin, margin + 25);
-                doc.text('Kerala : 679 328', margin, margin + 30);
-                doc.setFontSize(14);
-                doc.setFont('times', 'normal');
-                doc.text('Consultation', pageWidth - margin - 40, margin + 5);
-                doc.setFontSize(12);
-                doc.text('Online: 9207 773 880', pageWidth - margin - 40, margin + 12);
-                doc.text('Office: 7034 600 880', pageWidth - margin - 40, margin + 17);
-            } else {
-                doc.setFontSize(22);
-                doc.setFont('times', 'bold');
-                doc.text('Pratnya Astro', pageWidth / 2, margin + 12, { align: 'center' });
-            }
-            doc.setDrawColor(46, 125, 50);
-            doc.setLineWidth(0.5);
-            doc.line(margin, margin + 38, pageWidth - margin, margin + 38);
-        };
+        const pxPerMm = contentWidth / pageWidth;
+        const footerHeightMm = 22;
+        const maxContentHeightMm = pageHeight - margin - footerHeightMm;
+        const fullImageHeightMm = contentHeight / pxPerMm;
+
+        const watermarkWidthMm = 80;
+        const logoImg = new Image();
+        logoImg.src = 'logo.png';
+        await new Promise((resolve, reject) => {
+            logoImg.onload = resolve;
+            logoImg.onerror = reject;
+        });
+        const watermarkHeightMm = (logoImg.height / logoImg.width) * watermarkWidthMm;
+        const waterX = (pageWidth - watermarkWidthMm) / 2;
+        const waterY = (pageHeight - watermarkHeightMm) / 2;
 
         const drawFooter = (doc) => {
-            const footerY = pageHeight - 25;
+            const footerY = pageHeight - footerHeightMm;
             doc.setDrawColor(46, 125, 50);
-            doc.setLineWidth(0.5);
-            doc.line(margin, footerY - 5, pageWidth - margin, footerY - 5);
-            doc.setFontSize(16);
+            doc.setLineWidth(0.4);
+            doc.line(margin, footerY - 3, pageWidth - margin, footerY - 3);
+            doc.setFontSize(13);
             doc.setTextColor(46, 125, 50);
             doc.setFont('times', 'italic');
-            doc.text('Fix your appointment through the call', pageWidth / 2, footerY, { align: 'center' });
-            doc.setFontSize(12);
+            doc.text('Fix your appointment through the call', pageWidth / 2, footerY + 2, { align: 'center' });
+            doc.setFontSize(10);
             doc.setFont('helvetica', 'bold');
             doc.text('www.pratnya.in', pageWidth / 2, footerY + 8, { align: 'center' });
         };
 
-        drawHeader(pdf, template);
-        let y = margin + 42;
+        let remainingHeightMm = fullImageHeightMm;
+        let sourceY = 0;
+        let pageNum = 1;
+        const totalSlices = Math.ceil(fullImageHeightMm / maxContentHeightMm);
+        const lastPageNumber = totalSlices;
 
-        pdf.setTextColor(0, 0, 0);
-        pdf.setFontSize(12);
-        pdf.setFont('helvetica', 'normal');
-        pdf.text(`Name: ${name}`, margin, y);
-        pdf.text(`Star: ${star}`, pageWidth / 2, y);
-        y += 8;
-        pdf.text(`DOB: ${dob}`, margin, y);
-        pdf.text(`Time: ${displayTime}`, pageWidth / 2, y);
-        y += 15;
+        while (remainingHeightMm > 0) {
+            const sliceHeightMm = Math.min(maxContentHeightMm, remainingHeightMm);
+            const sliceHeightPx = sliceHeightMm * pxPerMm;
 
-        pdf.setFontSize(14);
-        pdf.setFont('helvetica', 'bold');
-        pdf.text('Consultation History', margin, y);
-        y += 6;
+            if (sliceHeightPx > 0) {
+                const sliceCanvas = document.createElement('canvas');
+                sliceCanvas.width = contentWidth;
+                sliceCanvas.height = sliceHeightPx;
+                const ctx = sliceCanvas.getContext('2d');
+                ctx.drawImage(canvas, 0, sourceY, contentWidth, sliceHeightPx, 0, 0, contentWidth, sliceHeightPx);
+                const sliceData = sliceCanvas.toDataURL('image/png');
 
-        const tableRows = consults.map(c => [
-            c.date || '',
-            `Problem:\n${c.problem || '-'}\n\nSolution:\n${c.solution || '-'}`
-        ]);
+                if (pageNum > 1) pdf.addPage();
+                pdf.addImage(sliceData, 'PNG', margin, margin, pageWidth - 2 * margin, sliceHeightMm);
+                pdf.addImage(waterDataUrl, 'PNG', waterX, waterY, watermarkWidthMm, watermarkHeightMm);
 
-        pdf.autoTable({
-            startY: y,
-            margin: { left: margin, right: margin },
-            head: [['Date', 'Details']],
-            body: tableRows,
-            theme: 'grid',
-            styles: { fontSize: 10, cellPadding: 3 },
-            headStyles: { fillColor: [46, 125, 50], textColor: 255 },
-            columnStyles: { 0: { cellWidth: 40 }, 1: { cellWidth: 'auto' } }
-        });
+                if (pageNum === lastPageNumber) {
+                    drawFooter(pdf);
+                }
+            }
 
-        const totalPages = pdf.internal.getNumberOfPages();
-        pdf.setPage(totalPages);
-        drawFooter(pdf);
+            sourceY += sliceHeightPx;
+            remainingHeightMm -= sliceHeightMm;
+            pageNum++;
+        }
 
         pdf.save(`${name}_Full_Report.pdf`);
         topToast.fire({ text: 'Downloaded successfully!' });
