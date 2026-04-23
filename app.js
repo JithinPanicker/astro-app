@@ -504,10 +504,8 @@ async function createPrescriptionPDFBlob() {
 
     if (!name && !rawBody) throw new Error('Form is empty');
 
-    // Properly escape body text before inserting into HTML
     const bodyEscaped = htmlEscape(rawBody).replace(/\n/g, '<br>');
 
-    // Hidden container
     const container = document.createElement('div');
     container.style.position = 'absolute';
     container.style.left = '-9999px';
@@ -541,9 +539,10 @@ async function createPrescriptionPDFBlob() {
             </div>
         `;
     } else {
+        // Pratnya: logo larger (55px)
         headerHtml = `
             <div style="display: flex; justify-content: center; border-bottom: 1px solid #2E7D32; padding-bottom: 8px; margin-bottom: 14px;">
-                <img src="logo.png" style="height: 35px; width: auto;">
+                <img src="logo.png" style="height: 55px; width: auto;">
             </div>
         `;
     }
@@ -569,7 +568,6 @@ async function createPrescriptionPDFBlob() {
         const contentWidth = canvas.width;
         const contentHeight = canvas.height;
 
-        // Watermark
         const waterDataUrl = await createWatermarkImage();
 
         const { jsPDF } = window.jspdf;
@@ -583,7 +581,7 @@ async function createPrescriptionPDFBlob() {
         const maxContentHeightMm = pageHeight - margin - footerHeightMm;
         const fullImageHeightMm = contentHeight / pxPerMm;
 
-        const watermarkWidthMm = 80; // larger watermark
+        const watermarkWidthMm = 80;
         const logoImg = new Image();
         logoImg.src = 'logo.png';
         await new Promise((resolve, reject) => {
@@ -594,14 +592,15 @@ async function createPrescriptionPDFBlob() {
         const waterX = (pageWidth - watermarkWidthMm) / 2;
         const waterY = (pageHeight - watermarkHeightMm) / 2;
 
+        // Footer – stylish font (bold italic, larger)
         const drawFooter = (doc) => {
             const footerY = pageHeight - footerHeightMm;
             doc.setDrawColor(46, 125, 50);
             doc.setLineWidth(0.4);
             doc.line(margin, footerY - 3, pageWidth - margin, footerY - 3);
-            doc.setFontSize(13);
+            doc.setFontSize(15);
             doc.setTextColor(46, 125, 50);
-            doc.setFont('times', 'italic');
+            doc.setFont('times', 'bolditalic');
             doc.text('Fix your appointment through the call', pageWidth / 2, footerY + 2, { align: 'center' });
             doc.setFontSize(10);
             doc.setFont('helvetica', 'bold');
@@ -691,7 +690,7 @@ window.sharePrescriptionPDF = async () => {
     }
 };
 
-// ==================== FULL REPORT PDF (NOW USES HTML2CANVAS FOR MALAYALAM) ====================
+// ==================== FULL REPORT PDF ====================
 window.generatePDF = async () => {
     const template = getSelectedTemplate();
     const name = document.getElementById('name').value || 'Client';
@@ -714,9 +713,7 @@ window.generatePDF = async () => {
 
     topToast.fire({ text: 'Generating PDF...' });
     try {
-        // Build HTML representation
         let html = '';
-        // Header
         if (template === 'ck') {
             html += `
                 <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid #2E7D32; padding-bottom: 8px; margin-bottom: 14px;">
@@ -739,11 +736,10 @@ window.generatePDF = async () => {
         } else {
             html += `
                 <div style="display: flex; justify-content: center; border-bottom: 1px solid #2E7D32; padding-bottom: 8px; margin-bottom: 14px;">
-                    <img src="logo.png" style="height: 35px; width: auto;">
+                    <img src="logo.png" style="height: 55px; width: auto;">
                 </div>
             `;
         }
-        // Client info
         html += `
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; font-family: Arial, sans-serif; font-size: 12px; margin-bottom: 10px;">
                 <div><strong>Name:</strong> ${htmlEscape(name)}</div>
@@ -786,7 +782,6 @@ window.generatePDF = async () => {
         const contentWidth = canvas.width;
         const contentHeight = canvas.height;
 
-        // Watermark
         const waterDataUrl = await createWatermarkImage();
 
         const { jsPDF } = window.jspdf;
@@ -811,18 +806,19 @@ window.generatePDF = async () => {
         const waterX = (pageWidth - watermarkWidthMm) / 2;
         const waterY = (pageHeight - watermarkHeightMm) / 2;
 
+        // Footer – stylish font for full report (size 17)
         const drawFooter = (doc) => {
             const footerY = pageHeight - footerHeightMm;
             doc.setDrawColor(46, 125, 50);
             doc.setLineWidth(0.4);
             doc.line(margin, footerY - 3, pageWidth - margin, footerY - 3);
-            doc.setFontSize(13);
+            doc.setFontSize(17);
             doc.setTextColor(46, 125, 50);
-            doc.setFont('times', 'italic');
+            doc.setFont('times', 'bolditalic');
             doc.text('Fix your appointment through the call', pageWidth / 2, footerY + 2, { align: 'center' });
-            doc.setFontSize(10);
+            doc.setFontSize(11);
             doc.setFont('helvetica', 'bold');
-            doc.text('www.pratnya.in', pageWidth / 2, footerY + 8, { align: 'center' });
+            doc.text('www.pratnya.in', pageWidth / 2, footerY + 9, { align: 'center' });
         };
 
         let remainingHeightMm = fullImageHeightMm;
